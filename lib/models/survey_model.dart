@@ -16,12 +16,15 @@ class SurveyQuestion {
   final bool isMultiChoice;
   /// 标准答案：单选为 int（选项下标），多选为 List&lt;int&gt;
   final dynamic correctAnswer;
+  /// 本题总分
+  final int questionScore;
 
   const SurveyQuestion({
     required this.title,
     required this.options,
     required this.isMultiChoice,
     this.correctAnswer,
+    this.questionScore = 10,
   });
 
   Map<String, dynamic> toJson() => {
@@ -29,6 +32,7 @@ class SurveyQuestion {
         'isMultiChoice': isMultiChoice,
         'options': options.map((o) => o.toJson()).toList(),
         'correctAnswer': correctAnswer,
+        'questionScore': questionScore,
       };
 
   factory SurveyQuestion.fromJson(Map<String, dynamic> json) => SurveyQuestion(
@@ -38,6 +42,7 @@ class SurveyQuestion {
             .map((o) => SurveyOption.fromJson(o as Map<String, dynamic>))
             .toList(),
         correctAnswer: json['correctAnswer'],
+        questionScore: json['questionScore'] as int? ?? 10,
       );
 }
 
@@ -45,17 +50,21 @@ class Survey {
   final String uid;
   final List<SurveyQuestion> questions;
   final DateTime? createdAt;
+  /// 创建者的基础信息
+  final String creatorBasicInfo;
 
   const Survey({
     required this.uid,
     required this.questions,
     this.createdAt,
+    this.creatorBasicInfo = '',
   });
 
   Map<String, dynamic> toJson() => {
         'uid': uid,
         'questions': questions.map((q) => q.toJson()).toList(),
         'createdAt': createdAt?.toIso8601String(),
+        'creatorBasicInfo': creatorBasicInfo,
       };
 
   factory Survey.fromJson(Map<String, dynamic> json) => Survey(
@@ -66,5 +75,6 @@ class Survey {
         createdAt: json['createdAt'] != null
             ? DateTime.parse(json['createdAt'] as String)
             : null,
+        creatorBasicInfo: json['creatorBasicInfo'] as String? ?? '',
       );
 }

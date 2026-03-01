@@ -39,13 +39,13 @@ class _TestListPageState extends State<TestListPage> {
     // 构建用户信息列表
     final List<SurveyUserInfo> userInfos = [];
     for (final survey in allSurveys) {
-      // 尝试加载该 UID 对应的用户信息
-      // 注意：当前架构下无法直接通过 UID 获取其他用户信息
-      // 这里简单显示 UID 和创建时间
+      // 从Survey中获取创建者的基础信息
+      debugPrint('加载测试 - UID: ${survey.uid}');
+      debugPrint('加载测试 - 基础信息: "${survey.creatorBasicInfo}"');
       userInfos.add(SurveyUserInfo(
         uid: survey.uid,
         survey: survey,
-        basicInfo: '', // 暂时为空，因为没有跨用户查询用户信息的机制
+        basicInfo: survey.creatorBasicInfo,
         createdAt: survey.createdAt,
       ));
     }
@@ -306,31 +306,34 @@ class _TestListPageState extends State<TestListPage> {
               const Divider(height: 1),
               const SizedBox(height: 12),
               
-              // 基础信息（如果有）
-              if (userInfo.basicInfo.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        userInfo.basicInfo,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+              // 基础信息
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 14,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      userInfo.basicInfo.isNotEmpty ? userInfo.basicInfo : '未填写基础信息',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: userInfo.basicInfo.isNotEmpty 
+                            ? Colors.grey.shade600 
+                            : Colors.grey.shade400,
+                        fontStyle: userInfo.basicInfo.isNotEmpty 
+                            ? FontStyle.normal 
+                            : FontStyle.italic,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               
               // 题目数量和创建时间
               Row(

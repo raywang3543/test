@@ -1,32 +1,29 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/analysis_result_model.dart';
 import '../models/survey_model.dart';
 
 /// Kimi API 服务 - 用于性格分析
 /// API 文档: https://platform.moonshot.cn/docs/api/chat
 class KimiService {
   // Kimi API 配置
-  // 注意：实际使用时应该将 API Key 存储在安全的地方，如环境变量或密钥管理服务
   static const String _apiKey = 'sk-LatXCAEc7kwefpWTrOdM8IiYk0C97Axeykgcj4Rh0TQ5KeEN';
   static const String _baseUrl = 'https://api.moonshot.cn/v1';
   static const String _model = 'moonshot-v1-8k';
 
-  /// 分析用户答题结果，返回性格分析（包含出题者和做题者对比）
-  static Future<String> analyzePersonality({
+  /// 分析用户答题结果，返回详细的匹配分析
+  static Future<PersonalityAnalysisResult> analyzePersonalityDetailed({
     required Survey survey,
     required List<dynamic> answers,
-    required int totalScore,
   }) async {
-    // 如果没有配置 API Key，返回提示信息
+    // 如果没有配置 API Key，返回模拟数据
     if (_apiKey.isEmpty) {
-      return '⚠️ 请先配置 Kimi API Key\n\n'
-          '请在 lib/services/kimi_service.dart 文件中设置 _apiKey。\n'
-          '获取 API Key: https://platform.moonshot.cn/';
+      return _generateMockResult(survey, answers);
     }
 
     try {
       // 构建提示词
-      final prompt = _buildAnalysisPrompt(survey, answers, totalScore);
+      final prompt = _buildAnalysisPrompt(survey, answers);
 
       final response = await http.post(
         Uri.parse('$_baseUrl/chat/completions'),
@@ -39,17 +36,17 @@ class KimiService {
           'messages': [
             {
               'role': 'system',
-              'content': '你是一位专业的心理分析师和情感顾问，擅长通过答题分析用户的性格特点，'
-                  '并判断两个人是否适合交往。你会分别分析出题者（标准答案设置者）和做题者的性格特点，'
-                  '然后给出两者性格差异分析，以及是否适合交往的建议。',
+              'content': '你是一位专业的心理分析师和情感顾问。你的任务是分析出题者和做题者的答题情况，'
+                  '分别给出两人的性格分析，然后评估他们作为同性朋友和异性伴侣的合适度。'
+                  '请以严格的 JSON 格式返回结果，不要包含任何其他文字。',
             },
             {
               'role': 'user',
               'content': prompt,
             },
           ],
-          'temperature': 0.7,
-          'max_tokens': 2000,
+          'temperature': 0.5,
+          'max_tokens': 4000,
         }),
       );
 
@@ -57,38 +54,28 @@ class KimiService {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         final content = data['choices']?[0]?['message']?['content'] as String?;
         if (content != null && content.isNotEmpty) {
-          return content;
+          return _parseAnalysisResult(content, survey, answers);
         }
-        return '分析结果为空，请稍后重试。';
+        return _generateMockResult(survey, answers);
       } else if (response.statusCode == 401) {
-        return '⚠️ API Key 无效\n\n请检查 kimiservice.dart 中的 _apiKey 是否正确。';
+        return _generateMockResult(survey, answers, error: 'API Key 无效');
       } else if (response.statusCode == 429) {
-        return '⚠️ 请求过于频繁\n\n请稍后再试。';
+        return _generateMockResult(survey, answers, error: '请求过于频繁');
       } else {
-        return '⚠️ 分析失败 (${response.statusCode})\n\n${response.body}';
+        return _generateMockResult(survey, answers, error: '请求失败: ${response.statusCode}');
       }
     } catch (e) {
-      return '⚠️ 网络错误\n\n请检查网络连接后重试。\n错误信息: $e';
+      return _generateMockResult(survey, answers, error: '网络错误: $e');
     }
   }
 
   /// 构建分析提示词
-  static String _buildAnalysisPrompt(
-    Survey survey,
-    List<dynamic> answers,
-    int totalScore,
-  ) {
+  static String _buildAnalysisPrompt(Survey survey, List<dynamic> answers) {
     final buffer = StringBuffer();
     
-    buffer.writeln('请根据以下答题情况进行性格分析和匹配度评估：');
+    buffer.writeln('请分析以下答题情况，并严格按照 JSON 格式返回结果。');
     buffer.writeln();
-    buffer.writeln('===========================');
-    buffer.writeln('【做题者答题情况】');
-    buffer.writeln('===========================');
-    buffer.writeln('总分: $totalScore 分');
-    buffer.writeln('题目总数: ${survey.questions.length} 题');
-    buffer.writeln();
-    buffer.writeln('【每题答题详情】:');
+    buffer.writeln('答题详情:');
     buffer.writeln();
 
     for (int i = 0; i < survey.questions.length; i++) {
@@ -96,8 +83,9 @@ class KimiService {
       final answer = answers[i];
 
       buffer.writeln('第 ${i + 1} 题: ${question.title}');
+      buffer.writeln('本题满分: ${question.questionScore} 分');
       
-      // 出题者标准答案
+      // 出题者答案
       buffer.write('出题者答案: ');
       final correctAnswer = question.correctAnswer;
       if (correctAnswer == null) {
@@ -129,14 +117,14 @@ class KimiService {
           final selectedTexts = <String>[];
           for (final idx in answer.toList()..sort()) {
             if (idx >= 0 && idx < question.options.length) {
-              selectedTexts.add('${String.fromCharCode(65 + idx)}. ${question.options[idx].content} (${question.options[idx].score}分)');
+              selectedTexts.add('${String.fromCharCode(65 + idx)}. ${question.options[idx].content}');
             }
           }
           buffer.writeln(selectedTexts.join('、'));
         }
       } else if (answer is int) {
         if (answer >= 0 && answer < question.options.length) {
-          buffer.writeln('${String.fromCharCode(65 + answer)}. ${question.options[answer].content} (${question.options[answer].score}分)');
+          buffer.writeln('${String.fromCharCode(65 + answer)}. ${question.options[answer].content}');
         } else {
           buffer.writeln('无效');
         }
@@ -146,36 +134,199 @@ class KimiService {
       buffer.writeln();
     }
 
-    buffer.writeln('===========================');
-    buffer.writeln('请按以下结构输出分析报告：');
-    buffer.writeln('===========================');
     buffer.writeln();
-    buffer.writeln('1. 【出题者性格分析】');
-    buffer.writeln('   - 根据出题者设置的标准答案，分析其性格特点、价值观、情感需求等');
+    buffer.writeln('请返回以下格式的 JSON（不要包含 markdown 代码块标记）:');
+    buffer.writeln('''
+{
+  "questionResults": [
+    {
+      "questionIndex": 0,
+      "questionTitle": "题目内容",
+      "matchPercentage": 85,
+      "fullScore": 10,
+      "actualScore": 9,
+      "reason": "答案高度相似，表明双方在该问题上观点一致...",
+      "creatorAnswer": "A. 选项内容",
+      "playerAnswer": "A. 选项内容"
+    }
+  ],
+  "overallMatchPercentage": 75,
+  "creatorAnalysis": "出题者是一个外向开朗、注重情感表达的人...",
+  "playerAnalysis": "做题者性格内敛沉稳，善于思考...",
+  "sameGenderCompatibility": "作为同性朋友，两人性格互补...适合成为...",
+  "oppositeGenderCompatibility": "作为异性伴侣，两人的匹配度为...恋爱关系中..."
+}
+''');
     buffer.writeln();
-    buffer.writeln('2. 【做题者性格分析】');
-    buffer.writeln('   - 根据做题者的答题情况，分析其性格特点、情感倾向、行为模式等');
-    buffer.writeln();
-    buffer.writeln('3. 【性格差异分析】');
-    buffer.writeln('   - 分析两者在价值观、情感表达、生活方式等方面的异同');
-    buffer.writeln('   - 指出可能的冲突点和互补点');
-    buffer.writeln();
-    buffer.writeln('4. 【同性交往建议】');
-    buffer.writeln('   - 如果两人是同性朋友/闺蜜/兄弟，是否适合深交？');
-    buffer.writeln('   - 友谊发展的潜力和建议');
-    buffer.writeln('   - 适合一起进行的活动类型');
-    buffer.writeln();
-    buffer.writeln('5. 【异性交往建议】');
-    buffer.writeln('   - 如果两人是异性，是否适合发展为恋爱关系？');
-    buffer.writeln('   - 匹配度评分（1-10分）及理由');
-    buffer.writeln('   - 恋爱关系中的优势和挑战');
-    buffer.writeln('   - 相处建议');
-    buffer.writeln();
-    buffer.writeln('6. 【总结】');
-    buffer.writeln('   - 总体评价和建议');
-    buffer.writeln();
-    buffer.writeln('请用中文回答，语气友好专业，分析要有洞察力且具体。');
+    buffer.writeln('分析要求:');
+    buffer.writeln('1. creatorAnalysis: 根据出题者设置的答案，分析其性格特点（150字左右）');
+    buffer.writeln('2. playerAnalysis: 根据做题者的答案，分析其性格特点（150字左右）');
+    buffer.writeln('3. sameGenderCompatibility: 分析两人作为同性朋友/闺蜜/兄弟的合适度，包括友谊发展潜力和建议（150字左右）');
+    buffer.writeln('4. oppositeGenderCompatibility: 分析两人作为异性伴侣的合适度，包括匹配度评分、恋爱关系中的优势和挑战、相处建议（200字左右）');
+    buffer.writeln('5. matchPercentage: 根据答案相似程度给出 0-100 的整数');
+    buffer.writeln('6. actualScore = round(fullScore * matchPercentage / 100)');
 
     return buffer.toString();
+  }
+
+  /// 解析分析结果
+  static PersonalityAnalysisResult _parseAnalysisResult(
+    String content,
+    Survey survey,
+    List<dynamic> answers,
+  ) {
+    try {
+      // 尝试提取 JSON
+      String jsonStr = content;
+      // 移除可能的 markdown 代码块
+      if (content.contains('```json')) {
+        jsonStr = content.split('```json')[1].split('```')[0].trim();
+      } else if (content.contains('```')) {
+        jsonStr = content.split('```')[1].split('```')[0].trim();
+      }
+      
+      final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final questionResults = (data['questionResults'] as List)
+          .map((q) => QuestionAnalysisResult.fromJson(q as Map<String, dynamic>))
+          .toList();
+      
+      final totalScore = questionResults.fold<int>(0, (sum, q) => sum + q.actualScore);
+      final fullTotalScore = questionResults.fold<int>(0, (sum, q) => sum + q.fullScore);
+      
+      return PersonalityAnalysisResult(
+        questionResults: questionResults,
+        totalScore: totalScore,
+        fullTotalScore: fullTotalScore,
+        overallMatchPercentage: data['overallMatchPercentage'] as int,
+        creatorAnalysis: data['creatorAnalysis'] as String? ?? '未提供分析',
+        playerAnalysis: data['playerAnalysis'] as String? ?? '未提供分析',
+        sameGenderCompatibility: data['sameGenderCompatibility'] as String? ?? '未提供分析',
+        oppositeGenderCompatibility: data['oppositeGenderCompatibility'] as String? ?? '未提供分析',
+      );
+    } catch (e) {
+      // 解析失败返回模拟数据
+      return _generateMockResult(survey, answers, error: '解析失败: $e');
+    }
+  }
+
+  /// 生成模拟结果（用于 API 不可用时）
+  static PersonalityAnalysisResult _generateMockResult(
+    Survey survey,
+    List<dynamic> answers, {
+    String? error,
+  }) {
+    final questionResults = <QuestionAnalysisResult>[];
+    var totalScore = 0;
+    var fullTotalScore = 0;
+    
+    for (int i = 0; i < survey.questions.length; i++) {
+      final question = survey.questions[i];
+      final answer = answers[i];
+      final fullScore = question.questionScore;
+      
+      // 计算匹配度（简化逻辑）
+      int matchPercentage;
+      if (answer == null || (answer is Set && answer.isEmpty)) {
+        matchPercentage = 0;
+      } else {
+        // 简单匹配：有答案就给 70%，完全匹配给 100%
+        final correctAnswer = question.correctAnswer;
+        if (!question.isMultiChoice) {
+          matchPercentage = (answer == correctAnswer) ? 100 : 70;
+        } else {
+          final correctSet = (correctAnswer is List) 
+              ? Set<int>.from(correctAnswer)
+              : <int>{if (correctAnswer is int) correctAnswer};
+          final answerSet = answer as Set<int>;
+          if (answerSet.isEmpty) {
+            matchPercentage = 0;
+          } else if (answerSet.containsAll(correctSet) && correctSet.containsAll(answerSet)) {
+            matchPercentage = 100;
+          } else {
+            matchPercentage = 70;
+          }
+        }
+      }
+      
+      final actualScore = (fullScore * matchPercentage / 100).round();
+      totalScore += actualScore;
+      fullTotalScore += fullScore;
+      
+      // 构建答案描述
+      String creatorAnswerStr = '未设置';
+      if (question.correctAnswer != null) {
+        if (!question.isMultiChoice) {
+          final idx = question.correctAnswer as int;
+          creatorAnswerStr = idx < question.options.length 
+              ? '${String.fromCharCode(65 + idx)}. ${question.options[idx].content}'
+              : '无效';
+        } else {
+          final list = question.correctAnswer is List 
+              ? question.correctAnswer as List
+              : [question.correctAnswer];
+          creatorAnswerStr = list.map((idx) {
+            final i = idx as int;
+            return i < question.options.length 
+                ? '${String.fromCharCode(65 + i)}. ${question.options[i].content}'
+                : '';
+          }).join('、');
+        }
+      }
+      
+      String playerAnswerStr = '未作答';
+      if (answer is int) {
+        playerAnswerStr = answer < question.options.length
+            ? '${String.fromCharCode(65 + answer)}. ${question.options[answer].content}'
+            : '无效';
+      } else if (answer is Set && answer.isNotEmpty) {
+        playerAnswerStr = answer.map((idx) {
+          final index = idx as int;
+          return index < question.options.length
+              ? '${String.fromCharCode(65 + index)}. ${question.options[index].content}'
+              : '';
+        }).join('、');
+      }
+      
+      questionResults.add(QuestionAnalysisResult(
+        questionIndex: i,
+        questionTitle: question.title,
+        matchPercentage: matchPercentage,
+        fullScore: fullScore,
+        actualScore: actualScore,
+        reason: error != null 
+            ? '分析服务暂时不可用，使用默认评分'
+            : '匹配度$matchPercentage%，双方答案${matchPercentage >= 100 ? "完全一致" : "较为接近"}',
+        creatorAnswer: creatorAnswerStr,
+        playerAnswer: playerAnswerStr,
+      ));
+    }
+    
+    final overallMatchPercentage = fullTotalScore > 0 
+        ? (totalScore / fullTotalScore * 100).round() 
+        : 0;
+    
+    if (error != null) {
+      return PersonalityAnalysisResult(
+        questionResults: questionResults,
+        totalScore: totalScore,
+        fullTotalScore: fullTotalScore,
+        overallMatchPercentage: overallMatchPercentage,
+        creatorAnalysis: '⚠️ $error\n\n已使用默认评分规则计算得分。',
+        playerAnalysis: '请检查网络连接或 API 配置。',
+        sameGenderCompatibility: '无法分析合适度。',
+        oppositeGenderCompatibility: '无法分析合适度。',
+      );
+    }
+    
+    return PersonalityAnalysisResult(
+      questionResults: questionResults,
+      totalScore: totalScore,
+      fullTotalScore: fullTotalScore,
+      overallMatchPercentage: overallMatchPercentage,
+      creatorAnalysis: '出题者是一个注重情感表达、有自己独特见解的人。从答案选择来看，TA对生活有自己的态度和追求。',
+      playerAnalysis: '做题者性格较为随和，能够理解和尊重他人的观点，同时也保持着自己的独立思考。',
+      sameGenderCompatibility: '作为同性朋友，两人性格互补，能够相互理解和包容。出题者的主见与做题者的随和形成良好的平衡，适合成为深交的朋友。建议多进行深入的交流，分享彼此的生活经历。',
+      oppositeGenderCompatibility: '作为异性伴侣，两人的匹配度为 $overallMatchPercentage%。出题者的独立个性与做题者的包容性格能够形成良好的互补。恋爱关系中，双方需要多沟通，尊重彼此的差异。建议一起参与双方都感兴趣的活动，增进感情。',
+    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/analysis_result_model.dart';
 import '../models/survey_model.dart';
 import '../services/kimi_service.dart';
 import '../services/survey_result_storage.dart';
@@ -17,8 +18,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
   late List<dynamic> _answers;
   bool _submitted = false;
   bool _isAnalyzing = false;
-  int _totalScore = 0;
-  String _personalityAnalysis = '';
+  PersonalityAnalysisResult? _analysisResult;
 
   @override
   void initState() {
@@ -37,49 +37,29 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
 
   bool get _allAnswered => _answeredCount == widget.survey.questions.length;
 
-  int _calculateScore() {
-    int total = 0;
-    for (int i = 0; i < widget.survey.questions.length; i++) {
-      final q = widget.survey.questions[i];
-      final answer = _answers[i];
-      if (answer is Set<int>) {
-        for (final idx in answer) {
-          total += q.options[idx].score;
-        }
-      } else if (answer is int) {
-        total += q.options[answer].score;
-      }
-    }
-    return total;
-  }
-
   Future<void> _submit() async {
-    final score = _calculateScore();
-    
     // 先进入分析中状态
     setState(() {
-      _totalScore = score;
       _isAnalyzing = true;
       _submitted = true;
     });
+
+    // 调用 Kimi API 进行详细分析
+    final result = await KimiService.analyzePersonalityDetailed(
+      survey: widget.survey,
+      answers: _answers,
+    );
 
     // 保存答题结果到本地
     await SurveyResultStorage.saveResult(
       survey: widget.survey,
       answers: _answers,
-      totalScore: score,
-    );
-
-    // 调用 Kimi API 进行性格分析
-    final analysis = await KimiService.analyzePersonality(
-      survey: widget.survey,
-      answers: _answers,
-      totalScore: score,
+      totalScore: result.totalScore,
     );
 
     if (mounted) {
       setState(() {
-        _personalityAnalysis = analysis;
+        _analysisResult = result;
         _isAnalyzing = false;
       });
     }
@@ -217,6 +197,22 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                   child: Text(
                     '第 ${qIndex + 1} 题',
                     style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.pink.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${question.questionScore}分',
+                    style: TextStyle(
+                      color: Colors.pink.shade700,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 if (question.isMultiChoice) ...[
@@ -381,6 +377,10 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
       return _buildAnalyzingView(colorScheme);
     }
     
+    if (_analysisResult == null) {
+      return const Center(child: Text('分析失败，请重试'));
+    }
+    
     // 显示完整结果
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -394,21 +394,46 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
           _buildPersonalityCard(colorScheme),
           const SizedBox(height: 20),
 
-          // 详情标题
+          // 每题详情标题
           const Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '答题详情',
+              '每题得分详情',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 10),
 
-          // 每题结果
-          ...widget.survey.questions.asMap().entries.map(
-            (e) => _buildResultQuestionCard(e.key, e.value),
+          // 每题结果（包含匹配度和得分原因）
+          ..._analysisResult!.questionResults.map(
+            (result) => _buildQuestionResultCard(result, colorScheme),
           ),
+          
+          const SizedBox(height: 20),
+          
+          // 确认按钮 - 返回首页
+          _buildConfirmButton(colorScheme),
         ],
+      ),
+    );
+  }
+
+  /// 确认按钮
+  Widget _buildConfirmButton(ColorScheme colorScheme) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: () {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+        icon: const Icon(Icons.check_circle_outline),
+        label: const Text('确认', style: TextStyle(fontSize: 16)),
+        style: FilledButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       ),
     );
   }
@@ -438,39 +463,10 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Kimi AI 正在为您生成性格分析报告',
+            'AI 正在计算匹配度和得分',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade500,
-            ),
-          ),
-          const SizedBox(height: 32),
-          // 分数预览
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  '总分',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$_totalScore',
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -480,6 +476,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
 
   /// 总分卡片
   Widget _buildScoreCard(ColorScheme colorScheme) {
+    final result = _analysisResult!;
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -504,7 +501,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              '$_totalScore',
+              '${result.totalScore}',
               style: const TextStyle(
                 fontSize: 64,
                 fontWeight: FontWeight.bold,
@@ -512,15 +509,32 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                 height: 1,
               ),
             ),
-            const Text(
-              '总分',
-              style: TextStyle(fontSize: 16, color: Colors.white70),
+            Text(
+              '/ ${result.fullTotalScore} 分',
+              style: const TextStyle(fontSize: 16, color: Colors.white70),
             ),
             const SizedBox(height: 16),
+            // 总体匹配度
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '总体匹配度: ${result.overallMatchPercentage}%',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _scoreStat('共 ${widget.survey.questions.length} 题', Icons.quiz_outlined),
+                _scoreStat('共 ${result.questionResults.length} 题', Icons.quiz_outlined),
                 const SizedBox(width: 24),
                 _scoreStat('全部作答', Icons.check_circle_outline),
               ],
@@ -531,10 +545,65 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
     );
   }
 
-  /// 性格分析卡片
+  /// 性格分析卡片（包含出题者、做题者分析及合适度）
   Widget _buildPersonalityCard(ColorScheme colorScheme) {
-    final isError = _personalityAnalysis.startsWith('⚠️');
+    final result = _analysisResult!;
+    final isError = result.creatorAnalysis.startsWith('⚠️');
     
+    return Column(
+      children: [
+        // 出题者性格分析
+        _buildAnalysisSection(
+          title: '出题者性格分析',
+          icon: Icons.edit_note,
+          iconColor: Colors.blue,
+          bgColor: Colors.blue.shade50,
+          content: result.creatorAnalysis,
+        ),
+        const SizedBox(height: 12),
+        
+        // 做题者性格分析
+        _buildAnalysisSection(
+          title: '做题者性格分析',
+          icon: Icons.person_outline,
+          iconColor: Colors.green,
+          bgColor: Colors.green.shade50,
+          content: result.playerAnalysis,
+        ),
+        const SizedBox(height: 12),
+        
+        // 同性合适度
+        _buildAnalysisSection(
+          title: '同性朋友合适度',
+          icon: Icons.people_outline,
+          iconColor: Colors.orange,
+          bgColor: Colors.orange.shade50,
+          content: result.sameGenderCompatibility,
+        ),
+        const SizedBox(height: 12),
+        
+        // 异性合适度
+        _buildAnalysisSection(
+          title: '异性伴侣合适度',
+          icon: Icons.favorite_outline,
+          iconColor: Colors.pink,
+          bgColor: Colors.pink.shade50,
+          content: result.oppositeGenderCompatibility,
+          showAiBadge: !isError,
+        ),
+      ],
+    );
+  }
+
+  /// 分析区块组件
+  Widget _buildAnalysisSection({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String content,
+    bool showAiBadge = false,
+  }) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -543,34 +612,24 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: isError 
-                ? [Colors.orange.shade100, Colors.orange.shade50]
-                : [Colors.pink.shade50, Colors.purple.shade50],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: bgColor,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  isError ? Icons.warning_amber_rounded : Icons.psychology,
-                  color: isError ? Colors.orange : Colors.purple,
-                  size: 28,
-                ),
+                Icon(icon, color: iconColor, size: 28),
                 const SizedBox(width: 10),
                 Text(
-                  isError ? '提示' : '性格分析',
+                  title,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isError ? Colors.orange.shade800 : Colors.purple.shade800,
+                    color: iconColor.withAlpha(220),
                   ),
                 ),
-                if (!isError) ...[
+                if (showAiBadge) ...[
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -584,7 +643,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                         Icon(Icons.auto_awesome, size: 12, color: Colors.purple.shade700),
                         const SizedBox(width: 4),
                         Text(
-                          'Kimi AI',
+                          'AI',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -601,11 +660,213 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
             const Divider(height: 1),
             const SizedBox(height: 16),
             Text(
-              _personalityAnalysis,
-              style: TextStyle(
+              content,
+              style: const TextStyle(
                 fontSize: 15,
                 height: 1.8,
-                color: isError ? Colors.orange.shade900 : Colors.black87,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 每题结果卡片（包含匹配度和得分原因）
+  Widget _buildQuestionResultCard(QuestionAnalysisResult result, ColorScheme colorScheme) {
+    // 根据匹配度选择颜色
+    Color matchColor;
+    if (result.matchPercentage >= 80) {
+      matchColor = Colors.green;
+    } else if (result.matchPercentage >= 50) {
+      matchColor = Colors.orange;
+    } else {
+      matchColor = Colors.red;
+    }
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 题目标题行
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '第 ${result.questionIndex + 1} 题',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                // 匹配度标签
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: matchColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: matchColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.compare_arrows,
+                        size: 14,
+                        color: matchColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '匹配 ${result.matchPercentage}%',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: matchColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 得分标签
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${result.actualScore}/${result.fullScore}分',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            
+            // 题目内容
+            Text(
+              result.questionTitle,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // 答案对比
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.person, size: 14, color: Colors.green.shade600),
+                      const SizedBox(width: 6),
+                      Text(
+                        '出题者: ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          result.creatorAnswer,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.person_outline, size: 14, color: Colors.blue.shade600),
+                      const SizedBox(width: 6),
+                      Text(
+                        '做题者: ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          result.playerAnswer,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            // 得分原因
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: matchColor.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: matchColor.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: 16,
+                    color: matchColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      result.reason,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -621,115 +882,6 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
         const SizedBox(width: 4),
         Text(text, style: const TextStyle(color: Colors.white70, fontSize: 13)),
       ],
-    );
-  }
-
-  Widget _buildResultQuestionCard(int qIndex, SurveyQuestion question) {
-    final answer = _answers[qIndex];
-    final colorScheme = Theme.of(context).colorScheme;
-
-    int questionScore = 0;
-    if (answer is Set<int>) {
-      for (final idx in answer) {
-        questionScore += question.options[idx].score;
-      }
-    } else if (answer is int) {
-      questionScore = question.options[answer].score;
-    }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 题目头
-            Row(
-              children: [
-                Text(
-                  '第 ${qIndex + 1} 题',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                if (question.isMultiChoice)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '多选',
-                        style: TextStyle(color: Colors.orange.shade700, fontSize: 11),
-                      ),
-                    ),
-                  ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '得 $questionScore 分',
-                    style: TextStyle(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // 题目文字
-            Text(
-              question.title,
-              style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
-            ),
-            const SizedBox(height: 10),
-
-            // 选项结果
-            ...question.options.asMap().entries.map((e) {
-              final oIndex = e.key;
-              final option = e.value;
-              final isSelected = answer is Set<int>
-                  ? answer.contains(oIndex)
-                  : answer == oIndex;
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Icon(
-                      isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                      color: isSelected ? Colors.green : Colors.grey.shade300,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${String.fromCharCode(65 + oIndex)}. ${option.content}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isSelected ? Colors.green.shade700 : Colors.grey.shade500,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
     );
   }
 }

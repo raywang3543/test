@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
+import '../services/survey_result_storage.dart';
 import '../services/user_storage.dart';
 import 'edit_user_page.dart';
 
@@ -26,15 +26,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _loadData() async {
     final profile = await UserStorage.load();
     final uid = await UserStorage.getOrCreateUid();
-    final prefs = await SharedPreferences.getInstance();
-    final score = prefs.containsKey('last_test_score')
-        ? prefs.getInt('last_test_score')
-        : null;
+    // 从答题结果存储中获取当前用户的最新得分
+    final latestResult = await SurveyResultStorage.loadCurrentUserLatestResult();
     if (mounted) {
       setState(() {
         _profile = profile ?? const UserProfile();
         _uid = uid;
-        _lastScore = score;
+        _lastScore = latestResult?.totalScore;
       });
     }
   }

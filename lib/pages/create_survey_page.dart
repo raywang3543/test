@@ -6,20 +6,18 @@ import '../services/user_storage.dart';
 
 class _OptionData {
   final TextEditingController contentController;
-  final TextEditingController scoreController;
 
   _OptionData()
-      : contentController = TextEditingController(),
-        scoreController = TextEditingController(text: '0');
+      : contentController = TextEditingController();
 
   void dispose() {
     contentController.dispose();
-    scoreController.dispose();
   }
 }
 
 class _QuestionData {
   final TextEditingController titleController;
+  final TextEditingController scoreController;
   bool isMultiChoice;
   final List<_OptionData> options;
   /// 标准答案：单选为 int?（选项下标），多选为 Set&lt;int&gt;
@@ -27,12 +25,14 @@ class _QuestionData {
 
   _QuestionData()
       : titleController = TextEditingController(),
+        scoreController = TextEditingController(),
         isMultiChoice = false,
         options = [_OptionData()],
         correctAnswer = null;
 
   void dispose() {
     titleController.dispose();
+    scoreController.dispose();
     for (final o in options) {
       o.dispose();
     }
@@ -179,20 +179,26 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
         _showSnackBar('第 ${i + 1} 题的题目不能为空');
         return false;
       }
+      // 验证本题分数
+      final scoreText = q.scoreController.text.trim();
+      if (scoreText.isEmpty) {
+        _showSnackBar('请设置第 ${i + 1} 题的分值');
+        return false;
+      }
+      if (int.tryParse(scoreText) == null || int.parse(scoreText) <= 0) {
+        _showSnackBar('第 ${i + 1} 题的分值必须为正整数');
+        return false;
+      }
       for (int j = 0; j < q.options.length; j++) {
         final o = q.options[j];
         if (o.contentController.text.trim().isEmpty) {
           _showSnackBar('第 ${i + 1} 题第 ${j + 1} 个选项的内容不能为空');
           return false;
         }
-        if (int.tryParse(o.scoreController.text.trim()) == null) {
-          _showSnackBar('第 ${i + 1} 题第 ${j + 1} 个选项的分数必须为整数');
-          return false;
-        }
       }
       // 检查是否设置了标准答案
       if (q.correctAnswer == null) {
-        _showSnackBar('请为第 ${i + 1} 题设置标准答案');
+        _showSnackBar('请为第 ${i + 1} 题设置我的答案');
         return false;
       }
     }
@@ -202,12 +208,20 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
   Future<void> _startSurvey() async {
     if (!_validate()) return;
 
-    // 获取当前用户的 UID
+    // 获取当前用户的 UID 和基础信息
     final uid = await UserStorage.getOrCreateUid();
+    final userProfile = await UserStorage.load();
+    final creatorBasicInfo = userProfile?.basicInfo ?? '';
+    
+    // 调试输出
+    debugPrint('创建测试 - UID: $uid');
+    debugPrint('创建测试 - 基础信息: "$creatorBasicInfo"');
+    debugPrint('创建测试 - userProfile: $userProfile');
 
     final survey = Survey(
       uid: uid,
       createdAt: DateTime.now(),
+      creatorBasicInfo: creatorBasicInfo,
       questions: _questions.map((q) {
         // 转换标准答案格式
         dynamic correctAnswer;
@@ -221,10 +235,11 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
           title: q.titleController.text.trim(),
           isMultiChoice: q.isMultiChoice,
           correctAnswer: correctAnswer,
+          questionScore: int.parse(q.scoreController.text.trim()),
           options: q.options.map((o) {
             return SurveyOption(
               content: o.contentController.text.trim(),
-              score: int.parse(o.scoreController.text.trim()),
+              score: 0, // 选项分数由Kimi根据匹配度计算
             );
           }).toList(),
         );
@@ -243,7 +258,7 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('创建测试'),
+        title: const Text('新建测试'),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -321,7 +336,56 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
             ),
             const SizedBox(height: 12),
 
-            // 题目输入
+            // 本题分数输入（放在题目内容上方）
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.pink.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          size: 18,
+                          color: Colors.pink.shade400,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('本题分值', style: TextStyle(fontSize: 14)),
+                        const Spacer(),
+                        SizedBox(
+                          width: 80,
+                          child: TextField(
+                            controller: question.scoreController,
+                            decoration: InputDecoration(
+                              hintText: '',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.pink.shade600,
+                            ),
+                          ),
+                        ),
+                        Text(' 分', style: TextStyle(color: Colors.pink.shade400)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // 题目输入（放在分值下方）
             TextField(
               controller: question.titleController,
               decoration: InputDecoration(
@@ -368,7 +432,7 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
             ),
             const SizedBox(height: 12),
 
-            // 标准答案区域
+            // 我的答案区域
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -527,7 +591,6 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
 
           // 选项内容
           Expanded(
-            flex: 4,
             child: TextField(
               controller: option.contentController,
               decoration: InputDecoration(
@@ -540,24 +603,6 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
             ),
           ),
           const SizedBox(width: 8),
-
-          // 分数输入
-          SizedBox(
-            width: 72,
-            child: TextField(
-              controller: option.scoreController,
-              decoration: InputDecoration(
-                labelText: '分数',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                isDense: true,
-              ),
-              keyboardType: const TextInputType.numberWithOptions(signed: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'-?\d*'))],
-              textInputAction: TextInputAction.next,
-            ),
-          ),
-          const SizedBox(width: 4),
 
           // 删除选项
           IconButton(
