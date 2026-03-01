@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
@@ -43,6 +44,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (passing == null) return true;
     if (_lastScore == null) return false;
     return _lastScore! >= passing;
+  }
+
+  /// 复制 UID 到剪贴板
+  Future<void> _copyUid(String uid) async {
+    await Clipboard.setData(ClipboardData(text: uid));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('UID 已复制到剪贴板'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -150,6 +165,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         letterSpacing: 0.5,
                       ),
                     ),
+                  ),
+                  // 复制 UID 按钮
+                  IconButton(
+                    onPressed: () => _copyUid(uid),
+                    icon: Icon(
+                      Icons.copy_outlined,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                    tooltip: '复制 UID',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               ),

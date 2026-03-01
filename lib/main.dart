@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'models/survey_model.dart';
 import 'pages/create_survey_page.dart';
-import 'pages/answer_survey_page.dart';
+import 'pages/test_list_page.dart';
 import 'pages/user_profile_page.dart';
 import 'services/survey_storage.dart';
+import 'services/user_storage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       title: '情感测试',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F6BED)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF48FB1)),
         useMaterial3: true,
         cardTheme: const CardThemeData(
           surfaceTintColor: Colors.transparent,
@@ -37,40 +37,73 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Survey? _survey;
+  bool _hasOwnSurvey = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSurvey();
+    _checkUserSurvey();
   }
 
-  Future<void> _loadSurvey() async {
-    final survey = await SurveyStorage.load();
-    if (mounted) setState(() => _survey = survey);
+  /// 检查当前用户是否创建过试题
+  Future<void> _checkUserSurvey() async {
+    final uid = await UserStorage.getOrCreateUid();
+    final hasSurvey = await SurveyStorage.hasSurvey(uid);
+    if (mounted) {
+      setState(() {
+        _hasOwnSurvey = hasSurvey;
+      });
+    }
   }
 
   void _goToCreate() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const CreateSurveyPage()),
-    ).then((_) => _loadSurvey());
+    ).then((_) => _checkUserSurvey());
   }
 
-  void _goToAnswer() {
-    if (_survey == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('请先创建情感测试'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+  void _goToTestList() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AnswerSurveyPage(survey: _survey!)),
+      MaterialPageRoute(builder: (_) => const TestListPage()),
     );
+  }
+
+  /// 删除自己创建的试题
+  Future<void> _deleteOwnSurvey() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确定要删除您创建的测试题吗？此操作不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final uid = await UserStorage.getOrCreateUid();
+      await SurveyStorage.deleteByUid(uid);
+      await _checkUserSurvey();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('测试题已删除'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -150,21 +183,30 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 48),
                   _FeatureCard(
                     icon: Icons.edit_note_rounded,
-                    color: colorScheme.primary,
-                    title: '创建测试',
-                    description: '添加题目，设置选项内容与分数，支持单选和多选',
+                    color: Colors.pink.shade400,
+                    title: '新建测试',
+                    description: '创建新的测试题目，设置选项与分数',
                     onTap: _goToCreate,
                   ),
                   const SizedBox(height: 16),
                   _FeatureCard(
                     icon: Icons.play_circle_outline_rounded,
-                    color: _survey != null ? Colors.pink.shade400 : Colors.grey.shade400,
+                    color: Colors.pink.shade400,
                     title: '开始测试',
-                    description: _survey != null
-                        ? '共 ${_survey!.questions.length} 题，点击开始答题'
-                        : '暂无测试内容，请先创建测试',
-                    onTap: _goToAnswer,
+                    description: '选择已有测试题进行答题',
+                    onTap: _goToTestList,
                   ),
+                  // 删除自己创建的试题按钮（仅当有试题时显示）
+                  if (_hasOwnSurvey) ...[
+                    const SizedBox(height: 16),
+                    _FeatureCard(
+                      icon: Icons.delete_outline_rounded,
+                      color: Colors.red.shade400,
+                      title: '删除我的测试',
+                      description: '删除您创建的测试题',
+                      onTap: _deleteOwnSurvey,
+                    ),
+                  ],
                 ],
               ),
             ),

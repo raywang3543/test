@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/survey_model.dart';
+import '../services/kimi_service.dart';
+import '../services/survey_result_storage.dart';
 
 class AnswerSurveyPage extends StatefulWidget {
   final Survey survey;
@@ -15,7 +16,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
   // 每题答案：单选为 int?（选项下标），多选为 Set<int>
   late List<dynamic> _answers;
   bool _submitted = false;
+  bool _isAnalyzing = false;
   int _totalScore = 0;
+  String _personalityAnalysis = '';
 
   @override
   void initState() {
@@ -52,12 +55,34 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
 
   Future<void> _submit() async {
     final score = _calculateScore();
+    
+    // 先进入分析中状态
     setState(() {
       _totalScore = score;
+      _isAnalyzing = true;
       _submitted = true;
     });
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('last_test_score', score);
+
+    // 保存答题结果到本地
+    await SurveyResultStorage.saveResult(
+      survey: widget.survey,
+      answers: _answers,
+      totalScore: score,
+    );
+
+    // 调用 Kimi API 进行性格分析
+    final analysis = await KimiService.analyzePersonality(
+      survey: widget.survey,
+      answers: _answers,
+      totalScore: score,
+    );
+
+    if (mounted) {
+      setState(() {
+        _personalityAnalysis = analysis;
+        _isAnalyzing = false;
+      });
+    }
   }
 
   @override
@@ -350,60 +375,23 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
 
   Widget _buildResultView() {
     final colorScheme = Theme.of(context).colorScheme;
+    
+    // 分析中状态
+    if (_isAnalyzing) {
+      return _buildAnalyzingView(colorScheme);
+    }
+    
+    // 显示完整结果
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         children: [
           // 总分卡片
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Icon(Icons.emoji_events_rounded, size: 64, color: Colors.amber),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '答题完成！',
-                    style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '$_totalScore',
-                    style: const TextStyle(
-                      fontSize: 64,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1,
-                    ),
-                  ),
-                  const Text(
-                    '总分',
-                    style: TextStyle(fontSize: 16, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _scoreStat('共 ${widget.survey.questions.length} 题', Icons.quiz_outlined),
-                      const SizedBox(width: 24),
-                      _scoreStat('全部作答', Icons.check_circle_outline),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildScoreCard(colorScheme),
+          const SizedBox(height: 20),
+          
+          // 性格分析卡片
+          _buildPersonalityCard(colorScheme),
           const SizedBox(height: 20),
 
           // 详情标题
@@ -421,6 +409,207 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
             (e) => _buildResultQuestionCard(e.key, e.value),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 分析中加载视图
+  Widget _buildAnalyzingView(ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 80,
+            height: 80,
+            child: CircularProgressIndicator(
+              strokeWidth: 4,
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            '正在分析您的答题...',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Kimi AI 正在为您生成性格分析报告',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+            ),
+          ),
+          const SizedBox(height: 32),
+          // 分数预览
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '总分',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$_totalScore',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 总分卡片
+  Widget _buildScoreCard(ColorScheme colorScheme) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.emoji_events_rounded, size: 64, color: Colors.amber),
+            const SizedBox(height: 12),
+            const Text(
+              '答题完成！',
+              style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '$_totalScore',
+              style: const TextStyle(
+                fontSize: 64,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                height: 1,
+              ),
+            ),
+            const Text(
+              '总分',
+              style: TextStyle(fontSize: 16, color: Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _scoreStat('共 ${widget.survey.questions.length} 题', Icons.quiz_outlined),
+                const SizedBox(width: 24),
+                _scoreStat('全部作答', Icons.check_circle_outline),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 性格分析卡片
+  Widget _buildPersonalityCard(ColorScheme colorScheme) {
+    final isError = _personalityAnalysis.startsWith('⚠️');
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: isError 
+                ? [Colors.orange.shade100, Colors.orange.shade50]
+                : [Colors.pink.shade50, Colors.purple.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isError ? Icons.warning_amber_rounded : Icons.psychology,
+                  color: isError ? Colors.orange : Colors.purple,
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  isError ? '提示' : '性格分析',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isError ? Colors.orange.shade800 : Colors.purple.shade800,
+                  ),
+                ),
+                if (!isError) ...[
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 12, color: Colors.purple.shade700),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Kimi AI',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.purple.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            Text(
+              _personalityAnalysis,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.8,
+                color: isError ? Colors.orange.shade900 : Colors.black87,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
