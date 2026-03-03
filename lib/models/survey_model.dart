@@ -47,6 +47,8 @@ class SurveyQuestion {
 }
 
 class Survey {
+  /// SQLite 自增主键
+  final int? id;
   final String uid;
   final List<SurveyQuestion> questions;
   final DateTime? createdAt;
@@ -54,6 +56,7 @@ class Survey {
   final String creatorBasicInfo;
 
   const Survey({
+    this.id,
     required this.uid,
     required this.questions,
     this.createdAt,

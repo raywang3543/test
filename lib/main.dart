@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
+import 'database/database_helper.dart';
 import 'pages/create_survey_page.dart';
+import 'pages/event_page.dart';
 import 'pages/test_list_page.dart';
+import 'pages/user_list_page.dart';
 import 'pages/user_profile_page.dart';
+import 'services/data_migration.dart';
 import 'services/survey_storage.dart';
 import 'services/user_storage.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 确保数据库平台已初始化（Web 平台需要加载 WASM）
+  await ensureDatabaseReady();
+  
+  // 执行数据迁移：将 SharedPreferences 数据迁移到 SQLite，然后清理旧数据
+  await DataMigration.performMigration();
+  
   runApp(const MyApp());
 }
 
@@ -42,7 +54,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _checkUserSurvey();
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    await _checkUserSurvey();
   }
 
   /// 检查当前用户是否创建过试题
@@ -119,7 +135,23 @@ class _HomePageState extends State<HomePage> {
             pinned: true,
             centerTitle: true,
             backgroundColor: colorScheme.primary,
+            leading: IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EventPage()),
+              ),
+              icon: const Icon(Icons.event_note_outlined, color: Colors.white),
+              tooltip: '事件',
+            ),
             actions: [
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserListPage()),
+                ),
+                icon: const Icon(Icons.people_outline_rounded, color: Colors.white),
+                tooltip: '用户列表',
+              ),
               IconButton(
                 onPressed: () => Navigator.push(
                   context,

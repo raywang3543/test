@@ -143,8 +143,6 @@ class KimiService {
       "questionIndex": 0,
       "questionTitle": "题目内容",
       "matchPercentage": 85,
-      "fullScore": 10,
-      "actualScore": 9,
       "reason": "答案高度相似，表明双方在该问题上观点一致...",
       "creatorAnswer": "A. 选项内容",
       "playerAnswer": "A. 选项内容"
@@ -164,7 +162,6 @@ class KimiService {
     buffer.writeln('3. sameGenderCompatibility: 分析两人作为同性朋友/闺蜜/兄弟的合适度，包括友谊发展潜力和建议（150字左右）');
     buffer.writeln('4. oppositeGenderCompatibility: 分析两人作为异性伴侣的合适度，包括匹配度评分、恋爱关系中的优势和挑战、相处建议（200字左右）');
     buffer.writeln('5. matchPercentage: 根据答案相似程度给出 0-100 的整数');
-    buffer.writeln('6. actualScore = round(fullScore * matchPercentage / 100)');
 
     return buffer.toString();
   }
@@ -186,10 +183,25 @@ class KimiService {
       }
       
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final questionResults = (data['questionResults'] as List)
-          .map((q) => QuestionAnalysisResult.fromJson(q as Map<String, dynamic>))
-          .toList();
-      
+      final rawResults = data['questionResults'] as List;
+      final questionResults = <QuestionAnalysisResult>[];
+      for (int i = 0; i < rawResults.length; i++) {
+        final q = rawResults[i] as Map<String, dynamic>;
+        final matchPercentage = q['matchPercentage'] as int;
+        final fullScore = i < survey.questions.length ? survey.questions[i].questionScore : 0;
+        final actualScore = (fullScore * matchPercentage / 100).round();
+        questionResults.add(QuestionAnalysisResult(
+          questionIndex: q['questionIndex'] as int,
+          questionTitle: q['questionTitle'] as String,
+          matchPercentage: matchPercentage,
+          fullScore: fullScore,
+          actualScore: actualScore,
+          reason: q['reason'] as String? ?? '',
+          creatorAnswer: q['creatorAnswer'] as String? ?? '',
+          playerAnswer: q['playerAnswer'] as String? ?? '',
+        ));
+      }
+
       final totalScore = questionResults.fold<int>(0, (sum, q) => sum + q.actualScore);
       final fullTotalScore = questionResults.fold<int>(0, (sum, q) => sum + q.fullScore);
       

@@ -50,10 +50,10 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
       answers: _answers,
     );
 
-    // 保存答题结果到本地
+    // 保存答题结果到本地 event 表
+    // answererUid: 当前用户（答题人），creatorUid: 出题人
     await SurveyResultStorage.saveResult(
-      survey: widget.survey,
-      answers: _answers,
+      creatorUid: widget.survey.uid,
       totalScore: result.totalScore,
     );
 

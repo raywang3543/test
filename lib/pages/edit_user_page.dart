@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
+import '../database/database_helper.dart';
 
 class EditUserPage extends StatefulWidget {
   final UserProfile profile;
@@ -36,14 +37,34 @@ class _EditUserPageState extends State<EditUserPage> {
   }
 
   Future<void> _save() async {
-    final profile = UserProfile(
-      basicInfo: _basicInfoCtrl.text,
-      detailedInfo: _detailedInfoCtrl.text,
-      passingScore: int.tryParse(_passingScoreCtrl.text.trim()),
-    );
-    await UserStorage.save(profile);
-    if (!mounted) return;
-    Navigator.pop(context);
+    try {
+      final profile = UserProfile(
+        basicInfo: _basicInfoCtrl.text,
+        detailedInfo: _detailedInfoCtrl.text,
+        passingScore: int.tryParse(_passingScoreCtrl.text.trim()),
+      );
+      
+      // 确保数据库已初始化
+      final db = DatabaseHelper();
+      await db.database;
+      
+      await UserStorage.save(profile);
+      
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e, stackTrace) {
+      debugPrint('保存失败: $e');
+      debugPrint('堆栈: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('保存失败: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override

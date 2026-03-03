@@ -2,37 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/user_model.dart';
 import '../services/survey_result_storage.dart';
-import '../services/user_storage.dart';
-import 'edit_user_page.dart';
 
-class UserProfilePage extends StatefulWidget {
-  const UserProfilePage({super.key});
+/// 用户详情页面 - 显示指定用户的个人信息（只读）
+class UserDetailPage extends StatefulWidget {
+  final String uid;
+  final UserProfile profile;
+  final int? lastScore;
+
+  const UserDetailPage({
+    super.key,
+    required this.uid,
+    required this.profile,
+    this.lastScore,
+  });
 
   @override
-  State<UserProfilePage> createState() => _UserProfilePageState();
+  State<UserDetailPage> createState() => _UserDetailPageState();
 }
 
-class _UserProfilePageState extends State<UserProfilePage> {
-  UserProfile _profile = const UserProfile();
+class _UserDetailPageState extends State<UserDetailPage> {
+  late UserProfile _profile;
+  late String _uid;
   int? _lastScore;
-  String _uid = '';
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _profile = widget.profile;
+    _uid = widget.uid;
+    _lastScore = widget.lastScore;
+    _loadLatestScore();
   }
 
-  Future<void> _loadData() async {
-    final profile = await UserStorage.load();
-    final uid = await UserStorage.getOrCreateUid();
-    // 从答题结果存储中获取当前用户的最新得分
-    final latestResult = await SurveyResultStorage.loadCurrentUserLatestResult();
-    if (mounted) {
+  /// 加载该用户的最新答题分数
+  Future<void> _loadLatestScore() async {
+    final results = await SurveyResultStorage.loadResultsByUid(_uid);
+    if (results.isNotEmpty && mounted) {
       setState(() {
-        _profile = profile ?? const UserProfile();
-        _uid = uid;
-        _lastScore = latestResult?['totalScore'] as int?;
+        _lastScore = results.first['totalScore'] as int?;
       });
     }
   }
@@ -58,22 +65,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('个人信息'),
+        title: const Text('用户信息'),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => EditUserPage(profile: _profile),
-              ),
-            ).then((_) => _loadData()),
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: '编辑',
-          ),
-        ],
+        // 注意：没有编辑按钮
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -166,7 +162,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     ),
                     tooltip: '复制 UID',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               ),
@@ -206,7 +203,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 color: colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.tune_rounded, color: colorScheme.primary, size: 24),
+              child:
+                  Icon(Icons.tune_rounded, color: colorScheme.primary, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -222,7 +220,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     score == null ? '未设置' : '答题达到 $score 分视为合格',
                     style: TextStyle(
                       fontSize: 13,
-                      color: score == null ? Colors.grey.shade400 : Colors.grey.shade600,
+                      color: score == null
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
                     ),
                   ),
                 ],

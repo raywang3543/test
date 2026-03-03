@@ -1,55 +1,32 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../database/database_helper.dart';
 import '../models/survey_model.dart';
 import 'user_storage.dart';
 
 class SurveyStorage {
-  static const _key = 'saved_surveys'; // 改为复数，存储多个测试题
+  static final _db = DatabaseHelper();
 
-  /// 保存测试题（自动关联当前用户的 UID）
+  /// 保存测试题（新建或覆盖）
   static Future<void> save(Survey survey) async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // 读取现有的所有测试题
-    final allSurveys = await loadAll();
-    
-    // 查找是否已有该 UID 的测试题，有则替换，无则添加
-    final index = allSurveys.indexWhere((s) => s.uid == survey.uid);
-    if (index >= 0) {
-      allSurveys[index] = survey;
-    } else {
-      allSurveys.add(survey);
-    }
-    
-    // 保存所有测试题
-    final jsonList = allSurveys.map((s) => s.toJson()).toList();
-    await prefs.setString(_key, jsonEncode(jsonList));
+    await _db.saveSurvey(
+      uid: survey.uid,
+      questionsJson: jsonEncode(survey.questions.map((q) => q.toJson()).toList()),
+      createdAt: survey.createdAt?.toIso8601String(),
+      creatorBasicInfo: survey.creatorBasicInfo,
+    );
   }
 
   /// 加载所有测试题
   static Future<List<Survey>> loadAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString(_key);
-    if (json == null) return [];
-    
-    try {
-      final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-      return list
-          .map((item) => Survey.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    final rows = await _db.getAllSurveys();
+    return rows.map(_rowToSurvey).toList();
   }
 
-  /// 根据 UID 加载对应的测试题
+  /// 根据创建者 UID 加载测试题
   static Future<Survey?> loadByUid(String uid) async {
-    final allSurveys = await loadAll();
-    try {
-      return allSurveys.firstWhere((s) => s.uid == uid);
-    } catch (e) {
-      return null;
-    }
+    final row = await _db.getSurveyByUid(uid);
+    if (row == null) return null;
+    return _rowToSurvey(row);
   }
 
   /// 加载当前用户的测试题
@@ -58,38 +35,43 @@ class SurveyStorage {
     return loadByUid(uid);
   }
 
-  /// 获取所有有测试题的 UID 列表
+  /// 获取所有有测试题的创建者 UID 列表
   static Future<List<String>> getAllUids() async {
-    final allSurveys = await loadAll();
-    return allSurveys.map((s) => s.uid).toList();
+    final surveys = await loadAll();
+    return surveys.map((s) => s.uid).toList();
   }
 
   /// 检查指定 UID 是否有测试题
   static Future<bool> hasSurvey(String uid) async {
-    final survey = await loadByUid(uid);
-    return survey != null;
+    final row = await _db.getSurveyByUid(uid);
+    return row != null;
   }
 
   /// 删除指定 UID 的测试题
   static Future<void> deleteByUid(String uid) async {
-    final prefs = await SharedPreferences.getInstance();
-    final allSurveys = await loadAll();
-    allSurveys.removeWhere((s) => s.uid == uid);
-    
-    final jsonList = allSurveys.map((s) => s.toJson()).toList();
-    await prefs.setString(_key, jsonEncode(jsonList));
+    await _db.deleteSurveyByUid(uid);
   }
 
   /// 清除所有测试题
   static Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+    await _db.deleteAllSurveys();
   }
 
-  // ========== 兼容旧版本的方法 ==========
-  
   /// @deprecated 仅用于兼容旧代码，始终返回 null
-  static Future<Survey?> load() async {
-    return null;
+  static Future<Survey?> load() async => null;
+
+  static Survey _rowToSurvey(Map<String, dynamic> row) {
+    final questions = (jsonDecode(row['questionsJson'] as String) as List)
+        .map((q) => SurveyQuestion.fromJson(q as Map<String, dynamic>))
+        .toList();
+    return Survey(
+      id: row['id'] as int?,
+      uid: row['uid'] as String,
+      questions: questions,
+      createdAt: row['createdAt'] != null
+          ? DateTime.parse(row['createdAt'] as String)
+          : null,
+      creatorBasicInfo: row['creatorBasicInfo'] as String? ?? '',
+    );
   }
 }

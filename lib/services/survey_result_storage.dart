@@ -1,130 +1,69 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/survey_model.dart';
-import '../models/survey_result_model.dart';
-import 'user_storage.dart';
+import '../database/database_helper.dart';
+import '../services/user_storage.dart';
 
-/// 答题结果存储服务 - 将 UID 与答题信息一一对应存储在本地
+/// 答题结果存储服务 - 使用 SQLite
 class SurveyResultStorage {
-  static const _key = 'survey_results';
+  static final _db = DatabaseHelper();
 
-  /// 保存新的答题结果（自动关联当前用户的 UID）
+  /// 保存答题结果到 event 表
+  /// [creatorUid] 出题人 UID
+  /// [totalScore] 测试总分数
   static Future<void> saveResult({
-    required Survey survey,
-    required List<dynamic> answers,
+    required String creatorUid,
     required int totalScore,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // 获取当前用户的 UID
-    final uid = await UserStorage.getOrCreateUid();
-    
-    // 构建答题详情列表
-    final questionAnswers = <QuestionAnswer>[];
-    for (int i = 0; i < survey.questions.length; i++) {
-      final question = survey.questions[i];
-      final answer = answers[i];
-      
-      final selectedOptions = <SelectedOption>[];
-      int questionScore = 0;
-      
-      if (answer is Set<int>) {
-        // 多选题
-        for (final idx in answer) {
-          final option = question.options[idx];
-          selectedOptions.add(SelectedOption(
-            content: option.content,
-            score: option.score,
-          ));
-          questionScore += option.score;
-        }
-      } else if (answer is int) {
-        // 单选题
-        final option = question.options[answer];
-        selectedOptions.add(SelectedOption(
-          content: option.content,
-          score: option.score,
-        ));
-        questionScore = option.score;
-      }
-      
-      questionAnswers.add(QuestionAnswer(
-        questionTitle: question.title,
-        isMultiChoice: question.isMultiChoice,
-        selectedOptions: selectedOptions,
-        questionScore: questionScore,
-      ));
-    }
-    
-    // 创建新的答题结果
-    final newResult = SurveyResult(
-      uid: uid,
-      submitTime: DateTime.now(),
+    // 获取当前答题人的 UID
+    final answererUid = await UserStorage.getOrCreateUid();
+
+    // 保存到 event 表
+    await _db.saveEvent(
+      answererUid: answererUid,
+      creatorUid: creatorUid,
       totalScore: totalScore,
-      answers: questionAnswers,
     );
-    
-    // 读取现有的历史记录
-    final existingResults = await loadAllResults();
-    
-    // 添加新记录到开头（最新的在前）
-    existingResults.insert(0, newResult);
-    
-    // 保存所有记录
-    final jsonList = existingResults.map((r) => r.toJson()).toList();
-    await prefs.setString(_key, jsonEncode(jsonList));
   }
 
-  /// 加载所有答题结果
-  static Future<List<SurveyResult>> loadAllResults() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString(_key);
-    if (json == null) return [];
-    
-    try {
-      final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-      return list
-          .map((item) => SurveyResult.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// 根据 UID 加载该用户的所有答题结果
-  static Future<List<SurveyResult>> loadResultsByUid(String uid) async {
-    final allResults = await loadAllResults();
-    return allResults.where((r) => r.uid == uid).toList();
-  }
-
-  /// 加载当前用户的所有答题结果
-  static Future<List<SurveyResult>> loadCurrentUserResults() async {
+  /// 加载当前用户的最新答题结果
+  static Future<Map<String, dynamic>?> loadCurrentUserLatestResult() async {
     final uid = await UserStorage.getOrCreateUid();
-    return loadResultsByUid(uid);
+    return await _db.getLatestEvent(uid);
   }
 
-  /// 获取当前用户的最新答题结果
-  static Future<SurveyResult?> loadCurrentUserLatestResult() async {
-    final userResults = await loadCurrentUserResults();
-    if (userResults.isEmpty) return null;
-    return userResults.first; // 已按时间倒序排列
+  /// 根据 UID 加载该用户的所有答题记录
+  static Future<List<Map<String, dynamic>>> loadResultsByUid(String uid) async {
+    return await _db.getEventsByAnswererUid(uid);
+  }
+
+  /// 加载当前用户的所有答题记录
+  static Future<List<Map<String, dynamic>>> loadCurrentUserResults() async {
+    final uid = await UserStorage.getOrCreateUid();
+    return await _db.getEventsByAnswererUid(uid);
+  }
+
+  /// 加载所有答题记录
+  static Future<List<Map<String, dynamic>>> loadAllResults() async {
+    return await _db.getAllEvents();
+  }
+
+  /// 加载答了指定出题人题目的所有记录
+  static Future<List<Map<String, dynamic>>> loadResultsByCreatorUid(String creatorUid) async {
+    return await _db.getEventsByCreatorUid(creatorUid);
   }
 
   /// 清除所有答题记录
   static Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+    final db = await _db.database;
+    await db.delete('event');
   }
 
   /// 清除当前用户的所有答题记录
   static Future<void> clearCurrentUserResults() async {
-    final prefs = await SharedPreferences.getInstance();
     final uid = await UserStorage.getOrCreateUid();
-    
-    final allResults = await loadAllResults();
-    final filteredResults = allResults.where((r) => r.uid != uid).toList();
-    
-    final jsonList = filteredResults.map((r) => r.toJson()).toList();
-    await prefs.setString(_key, jsonEncode(jsonList));
+    final db = await _db.database;
+    await db.delete(
+      'event',
+      where: 'answererUid = ?',
+      whereArgs: [uid],
+    );
   }
 }
