@@ -75,7 +75,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: Text(_submitted ? '测试结果' : '情感测试'),
+        title: Text(_submitted ? '测试结果' : '性格匹配测试'),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,

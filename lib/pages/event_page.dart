@@ -148,7 +148,7 @@ class _EventPageState extends State<EventPage> {
                 children: [
                   _buildSection(
                     colorScheme: colorScheme,
-                    title: '完成我测试题的用户',
+                    title: '完成我的测试',
                     icon: Icons.people_alt_outlined,
                     items: _completedMine,
                     emptyText: '暂无用户完成你的测试题',
@@ -157,7 +157,7 @@ class _EventPageState extends State<EventPage> {
                   const SizedBox(height: 24),
                   _buildSection(
                     colorScheme: colorScheme,
-                    title: '我完成的测试题',
+                    title: '我完成的测试',
                     icon: Icons.assignment_turned_in_outlined,
                     items: _iCompleted,
                     emptyText: '你还没有完成任何测试题',

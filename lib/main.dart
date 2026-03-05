@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '情感测试',
+      title: '性格匹配测试',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF48FB1)),
@@ -177,10 +177,10 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.favorite_rounded, size: 72, color: Colors.white30),
+                      Icon(Icons.psychology_rounded, size: 72, color: Colors.white30),
                       SizedBox(height: 10),
                       Text(
-                        '情感测试',
+                        '性格匹配测试',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -200,7 +200,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    '欢迎使用情感测试系统',
+                    '欢迎使用性格匹配测试',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -208,7 +208,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '创建测试题目，探索你的情感世界',
+                    '创建测试题目，发现你们的性格契合度',
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
                   ),
@@ -217,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.edit_note_rounded,
                     color: Colors.pink.shade400,
                     title: '新建测试',
-                    description: '创建新的测试题目，设置选项与分数',
+                    description: '创建性格匹配题目，设置选项与分数',
                     onTap: _goToCreate,
                   ),
                   const SizedBox(height: 16),
@@ -225,7 +225,7 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.play_circle_outline_rounded,
                     color: Colors.pink.shade400,
                     title: '开始测试',
-                    description: '选择已有测试题进行答题',
+                    description: '选择性格测试题目，测试你们的匹配程度',
                     onTap: _goToTestList,
                   ),
                   // 删除自己创建的试题按钮（仅当有试题时显示）
@@ -234,8 +234,8 @@ class _HomePageState extends State<HomePage> {
                     _FeatureCard(
                       icon: Icons.delete_outline_rounded,
                       color: Colors.red.shade400,
-                      title: '删除我的测试',
-                      description: '删除您创建的测试题',
+                      title: '删除测试',
+                      description: '删除您创建的性格匹配题目',
                       onTap: _deleteOwnSurvey,
                     ),
                   ],
