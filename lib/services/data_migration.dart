@@ -27,15 +27,7 @@ class DataMigration {
       return;
     }
 
-    // 迁移 UID
-    if (oldUid != null) {
-      // 检查 SQLite 中是否已有 currentUser
-      final currentUid = await db.getCurrentUid();
-      if (currentUid == null) {
-        // 将旧 UID 设置到 SQLite
-        await db.setCurrentUid(oldUid);
-      }
-    }
+    // 迁移 UID：旧 UID 已由 UserStorage 从 SharedPreferences 读取，无需额外处理
 
     // 迁移用户资料
     if (oldProfileJson != null) {

@@ -38,6 +38,7 @@ class _EventPageState extends State<EventPage> {
     final Map<String, Map<String, dynamic>> answererMap = {};
     for (final e in creatorEvents) {
       final uid = e['answererUid'] as String;
+      if (uid == currentUid) continue;
       if (!answererMap.containsKey(uid)) answererMap[uid] = e;
     }
 
@@ -46,6 +47,7 @@ class _EventPageState extends State<EventPage> {
     final Map<String, Map<String, dynamic>> creatorMap = {};
     for (final e in answererEvents) {
       final uid = e['creatorUid'] as String;
+      if (uid == currentUid) continue;
       if (!creatorMap.containsKey(uid)) creatorMap[uid] = e;
     }
 

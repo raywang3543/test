@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../database/database_helper.dart';
 import '../models/user_model.dart';
-import '../services/survey_result_storage.dart';
+import '../services/user_storage.dart';
 
 /// 用户详情页面 - 显示指定用户的个人信息（只读）
 class UserDetailPage extends StatefulWidget {
@@ -24,6 +25,7 @@ class _UserDetailPageState extends State<UserDetailPage> {
   late UserProfile _profile;
   late String _uid;
   int? _lastScore;
+  bool _showDetailedInfo = false;
 
   @override
   void initState() {
@@ -31,15 +33,29 @@ class _UserDetailPageState extends State<UserDetailPage> {
     _profile = widget.profile;
     _uid = widget.uid;
     _lastScore = widget.lastScore;
-    _loadLatestScore();
+    _checkAccess();
   }
 
-  /// 加载该用户的最新答题分数
-  Future<void> _loadLatestScore() async {
-    final results = await SurveyResultStorage.loadResultsByUid(_uid);
-    if (results.isNotEmpty && mounted) {
+  /// 检查当前用户是否有权查看详细信息：
+  /// 需完成该用户的测试，且分数达到合格线（未设合格线则完成即可）
+  Future<void> _checkAccess() async {
+    final currentUid = await UserStorage.getCurrentUid();
+    if (currentUid == null) return;
+
+    final db = DatabaseHelper();
+    final events =
+        await db.getEventsByAnswererAndCreatorUid(currentUid, _uid);
+
+    if (events.isEmpty) return;
+
+    final score = events.first['totalScore'] as int;
+    final passingScore = _profile.passingScore;
+    final passed = passingScore == null || score >= passingScore;
+
+    if (mounted) {
       setState(() {
-        _lastScore = results.first['totalScore'] as int?;
+        _lastScore = score;
+        _showDetailedInfo = passed;
       });
     }
   }
@@ -83,13 +99,15 @@ class _UserDetailPageState extends State<UserDetailPage> {
               uid: _uid,
             ),
             const SizedBox(height: 12),
-            _buildInfoCard(
-              title: '详细信息',
-              icon: Icons.info_outline_rounded,
-              content: _profile.detailedInfo,
-              colorScheme: colorScheme,
-            ),
-            const SizedBox(height: 12),
+            if (_showDetailedInfo) ...[
+              _buildInfoCard(
+                title: '详细信息',
+                icon: Icons.info_outline_rounded,
+                content: _profile.detailedInfo,
+                colorScheme: colorScheme,
+              ),
+              const SizedBox(height: 12),
+            ],
             _buildPassingScoreCard(colorScheme),
           ],
         ),

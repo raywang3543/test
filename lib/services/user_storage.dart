@@ -1,22 +1,42 @@
+import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import '../models/user_model.dart';
 
-/// 用户存储服务 - 使用 SQLite
+/// 用户存储服务
+/// UID 在本地 SharedPreferences 中生成并持久化，不依赖服务器
 class UserStorage {
   static final _db = DatabaseHelper();
+  static const _uidKey = 'user_uid';
 
-  /// 获取或创建 UID
-  /// 当 currentUser 表中不存在 uid 时，为用户创建 uid 并保存
+  /// 生成 UUID v4 格式的 UID
+  static String _generateUid() {
+    final rand = Random.secure();
+    const hex = '0123456789abcdef';
+    String s(int n) => List.generate(n, (_) => hex[rand.nextInt(16)]).join();
+    final variant = ['8', '9', 'a', 'b'][rand.nextInt(4)];
+    return '${s(8)}-${s(4)}-4${s(3)}-$variant${s(3)}-${s(12)}';
+  }
+
+  /// 获取或创建 UID（本地 SharedPreferences）
   static Future<String> getOrCreateUid() async {
-    return await _db.getOrCreateUid();
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_uidKey);
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    final uid = _generateUid();
+    await prefs.setString(_uidKey, uid);
+    return uid;
   }
 
-  /// 获取当前用户 UID（如果不存在返回 null）
+  /// 获取当前 UID（如果不存在返回 null）
   static Future<String?> getCurrentUid() async {
-    return await _db.getCurrentUid();
+    final prefs = await SharedPreferences.getInstance();
+    final uid = prefs.getString(_uidKey);
+    return (uid != null && uid.isNotEmpty) ? uid : null;
   }
 
-  /// 保存用户信息到 userInfo 表
+  /// 保存用户信息到服务器
   static Future<void> save(UserProfile profile) async {
     final uid = await getOrCreateUid();
     await _db.saveUserInfo(

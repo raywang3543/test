@@ -1,23 +1,15 @@
 import 'package:flutter/material.dart';
-import 'database/database_helper.dart';
 import 'pages/create_survey_page.dart';
 import 'pages/event_page.dart';
 import 'pages/test_list_page.dart';
 import 'pages/user_list_page.dart';
 import 'pages/user_profile_page.dart';
-import 'services/data_migration.dart';
+import 'services/server_config.dart';
 import 'services/survey_storage.dart';
 import 'services/user_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 确保数据库平台已初始化（Web 平台需要加载 WASM）
-  await ensureDatabaseReady();
-  
-  // 执行数据迁移：将 SharedPreferences 数据迁移到 SQLite，然后清理旧数据
-  await DataMigration.performMigration();
-  
   runApp(const MyApp());
 }
 
@@ -50,6 +42,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _hasOwnSurvey = false;
+  String _serverUrl = '';
 
   @override
   void initState() {
@@ -58,18 +51,87 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _initApp() async {
+    final url = await ServerConfig.getBaseUrl();
+    if (url == null || url.isEmpty) {
+      if (mounted) await _showServerConfigDialog(canDismiss: false);
+    } else {
+      setState(() => _serverUrl = url);
+    }
     await _checkUserSurvey();
   }
 
-  /// 检查当前用户是否创建过试题
   Future<void> _checkUserSurvey() async {
-    final uid = await UserStorage.getOrCreateUid();
-    final hasSurvey = await SurveyStorage.hasSurvey(uid);
-    if (mounted) {
-      setState(() {
-        _hasOwnSurvey = hasSurvey;
-      });
-    }
+    try {
+      final uid = await UserStorage.getOrCreateUid();
+      final hasSurvey = await SurveyStorage.hasSurvey(uid);
+      if (mounted) setState(() => _hasOwnSurvey = hasSurvey);
+    } catch (_) {}
+  }
+
+  Future<void> _showServerConfigDialog({bool canDismiss = true}) async {
+    final controller = TextEditingController(text: _serverUrl);
+    String? error;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: canDismiss,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('服务器地址'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '请输入局域网服务器地址（含端口号）',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: 'http://192.168.x.x:8000',
+                  border: const OutlineInputBorder(),
+                  errorText: error,
+                  prefixIcon: const Icon(Icons.dns_outlined),
+                ),
+                keyboardType: TextInputType.url,
+                autofocus: true,
+                onChanged: (_) {
+                  if (error != null) setDialogState(() => error = null);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            if (canDismiss)
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('取消'),
+              ),
+            FilledButton(
+              onPressed: () async {
+                final url = controller.text.trim();
+                if (url.isEmpty) {
+                  setDialogState(() => error = '请输入服务器地址');
+                  return;
+                }
+                if (!url.startsWith('http')) {
+                  setDialogState(() => error = '地址需以 http:// 或 https:// 开头');
+                  return;
+                }
+                await ServerConfig.setBaseUrl(url);
+                if (ctx.mounted) {
+                  setState(() => _serverUrl = url);
+                  Navigator.pop(ctx);
+                }
+              },
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _goToCreate() {
@@ -86,7 +148,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// 删除自己创建的试题
   Future<void> _deleteOwnSurvey() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -149,7 +210,8 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(builder: (_) => const UserListPage()),
                 ),
-                icon: const Icon(Icons.people_outline_rounded, color: Colors.white),
+                icon: const Icon(Icons.people_outline_rounded,
+                    color: Colors.white),
                 tooltip: '用户列表',
               ),
               IconButton(
@@ -157,8 +219,15 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(builder: (_) => const UserProfilePage()),
                 ),
-                icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
+                icon: const Icon(Icons.person_outline_rounded,
+                    color: Colors.white),
                 tooltip: '个人信息',
+              ),
+              IconButton(
+                onPressed: () =>
+                    _showServerConfigDialog(canDismiss: true),
+                icon: const Icon(Icons.dns_outlined, color: Colors.white),
+                tooltip: '服务器设置',
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -177,7 +246,8 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.psychology_rounded, size: 72, color: Colors.white30),
+                      Icon(Icons.psychology_rounded,
+                          size: 72, color: Colors.white30),
                       SizedBox(height: 10),
                       Text(
                         '性格匹配测试',
@@ -209,9 +279,26 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 8),
                   Text(
                     '创建测试题目，发现你们的性格契合度',
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style:
+                        TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
                   ),
+                  if (_serverUrl.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.circle,
+                            size: 8, color: Colors.green.shade400),
+                        const SizedBox(width: 4),
+                        Text(
+                          _serverUrl,
+                          style: TextStyle(
+                              fontSize: 11, color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 48),
                   _FeatureCard(
                     icon: Icons.edit_note_rounded,
@@ -228,7 +315,6 @@ class _HomePageState extends State<HomePage> {
                     description: '选择性格测试题目，测试你们的匹配程度',
                     onTap: _goToTestList,
                   ),
-                  // 删除自己创建的试题按钮（仅当有试题时显示）
                   if (_hasOwnSurvey) ...[
                     const SizedBox(height: 16),
                     _FeatureCard(
@@ -304,12 +390,16 @@ class _FeatureCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500, height: 1.4),
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade500,
+                          height: 1.4),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey.shade400),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 16, color: Colors.grey.shade400),
             ],
           ),
         ),

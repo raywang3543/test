@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
-import '../database/database_helper.dart';
 
 class EditUserPage extends StatefulWidget {
   final UserProfile profile;
@@ -43,10 +42,6 @@ class _EditUserPageState extends State<EditUserPage> {
         detailedInfo: _detailedInfoCtrl.text,
         passingScore: int.tryParse(_passingScoreCtrl.text.trim()),
       );
-      
-      // 确保数据库已初始化
-      final db = DatabaseHelper();
-      await db.database;
       
       await UserStorage.save(profile);
       

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../database/database_helper.dart';
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
 import 'user_detail_page.dart';
@@ -36,20 +35,12 @@ class _UserListPageState extends State<UserListPage> {
 
     final currentUid = await UserStorage.getCurrentUid();
     final allUsers = await UserStorage.loadAll();
-    final db = DatabaseHelper();
 
     final userList = <UserListItem>[];
     for (final row in allUsers) {
       final uid = row['uid'] as String;
+      if (uid == currentUid) continue;
       final passingScore = row['passingScore'] as int?;
-
-      bool showDetailedInfo = false;
-      if (currentUid != null) {
-        final events = await db.getEventsByAnswererAndCreatorUid(currentUid, uid);
-        showDetailedInfo = events.any((e) =>
-            passingScore == null ||
-            (e['totalScore'] as int) >= passingScore);
-      }
 
       userList.add(UserListItem(
         uid: uid,
@@ -58,7 +49,6 @@ class _UserListPageState extends State<UserListPage> {
           detailedInfo: row['detailedInfo'] as String? ?? '',
           passingScore: passingScore,
         ),
-        showDetailedInfo: showDetailedInfo,
       ));
     }
 
@@ -256,7 +246,6 @@ class _UserListPageState extends State<UserListPage> {
   Widget _buildUserCard(UserListItem userInfo, ColorScheme colorScheme) {
     final displayUid = _highlightMatch(userInfo.uid, _searchQuery);
     final basicInfo = userInfo.profile.basicInfo;
-    final detailedInfo = userInfo.profile.detailedInfo;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -347,24 +336,6 @@ class _UserListPageState extends State<UserListPage> {
                   ),
                 ],
               ),
-              if (userInfo.showDetailedInfo && detailedInfo.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.lock_open_outlined, size: 14, color: Colors.green.shade400),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        detailedInfo,
-                        style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
               const SizedBox(height: 8),
               // 最后答题时间和得分
               Row(
@@ -476,14 +447,12 @@ class _UserListPageState extends State<UserListPage> {
 class UserListItem {
   final String uid;
   final UserProfile profile;
-  final bool showDetailedInfo;
   final DateTime? lastSubmitTime;
   final int? lastScore;
 
   const UserListItem({
     required this.uid,
     required this.profile,
-    this.showDetailedInfo = false,
     this.lastSubmitTime,
     this.lastScore,
   });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/survey_model.dart';
 import '../services/survey_storage.dart';
+import '../services/user_storage.dart';
 import 'answer_survey_page.dart';
 
 /// 测试题列表页面 - 显示所有保存在本地的 UID 和用户基础信息
@@ -35,10 +36,12 @@ class _TestListPageState extends State<TestListPage> {
     
     // 加载所有测试题
     final allSurveys = await SurveyStorage.loadAll();
-    
+    final currentUid = await UserStorage.getCurrentUid();
+
     // 构建用户信息列表
     final List<SurveyUserInfo> userInfos = [];
     for (final survey in allSurveys) {
+      if (survey.uid == currentUid) continue;
       // 从Survey中获取创建者的基础信息
       debugPrint('加载测试 - UID: ${survey.uid}');
       debugPrint('加载测试 - 基础信息: "${survey.creatorBasicInfo}"');

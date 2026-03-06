@@ -1,21 +1,16 @@
 import '../database/database_helper.dart';
 import '../services/user_storage.dart';
 
-/// 答题结果存储服务 - 使用 SQLite
+/// 答题结果存储服务 - 通过服务器 API 操作
 class SurveyResultStorage {
   static final _db = DatabaseHelper();
 
-  /// 保存答题结果到 event 表
-  /// [creatorUid] 出题人 UID
-  /// [totalScore] 测试总分数
+  /// 保存答题结果
   static Future<void> saveResult({
     required String creatorUid,
     required int totalScore,
   }) async {
-    // 获取当前答题人的 UID
     final answererUid = await UserStorage.getOrCreateUid();
-
-    // 保存到 event 表
     await _db.saveEvent(
       answererUid: answererUid,
       creatorUid: creatorUid,
@@ -46,24 +41,19 @@ class SurveyResultStorage {
   }
 
   /// 加载答了指定出题人题目的所有记录
-  static Future<List<Map<String, dynamic>>> loadResultsByCreatorUid(String creatorUid) async {
+  static Future<List<Map<String, dynamic>>> loadResultsByCreatorUid(
+      String creatorUid) async {
     return await _db.getEventsByCreatorUid(creatorUid);
   }
 
   /// 清除所有答题记录
   static Future<void> clearAll() async {
-    final db = await _db.database;
-    await db.delete('event');
+    await _db.deleteAllEvents();
   }
 
   /// 清除当前用户的所有答题记录
   static Future<void> clearCurrentUserResults() async {
     final uid = await UserStorage.getOrCreateUid();
-    final db = await _db.database;
-    await db.delete(
-      'event',
-      where: 'answererUid = ?',
-      whereArgs: [uid],
-    );
+    await _db.deleteEventsByAnswererUid(uid);
   }
 }
