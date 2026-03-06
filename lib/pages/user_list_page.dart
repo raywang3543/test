@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../database/database_helper.dart';
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
 import 'user_detail_page.dart';
@@ -35,12 +36,22 @@ class _UserListPageState extends State<UserListPage> {
 
     final currentUid = await UserStorage.getCurrentUid();
     final allUsers = await UserStorage.loadAll();
+    final db = DatabaseHelper();
 
     final userList = <UserListItem>[];
     for (final row in allUsers) {
       final uid = row['uid'] as String;
       if (uid == currentUid) continue;
       final passingScore = row['passingScore'] as int?;
+
+      int? lastScore;
+      if (currentUid != null) {
+        final events =
+            await db.getEventsByAnswererAndCreatorUid(currentUid, uid);
+        if (events.isNotEmpty) {
+          lastScore = events.first['totalScore'] as int;
+        }
+      }
 
       userList.add(UserListItem(
         uid: uid,
@@ -49,6 +60,7 @@ class _UserListPageState extends State<UserListPage> {
           detailedInfo: row['detailedInfo'] as String? ?? '',
           passingScore: passingScore,
         ),
+        lastScore: lastScore,
       ));
     }
 
@@ -340,6 +352,27 @@ class _UserListPageState extends State<UserListPage> {
               // 最后答题时间和得分
               Row(
                 children: [
+                  if (userInfo.lastScore != null &&
+                      userInfo.profile.passingScore != null &&
+                      userInfo.lastScore! >= userInfo.profile.passingScore!)
+                    Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade300),
+                      ),
+                      child: Text(
+                        '合格',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ),
                   if (userInfo.lastScore != null)
                     Container(
                       padding: const EdgeInsets.symmetric(

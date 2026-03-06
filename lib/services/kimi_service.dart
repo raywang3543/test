@@ -166,6 +166,22 @@ class KimiService {
     return buffer.toString();
   }
 
+  /// 判断做题者答案是否与出题者答案完全一致
+  static bool _answersMatch(SurveyQuestion question, dynamic answer) {
+    final correctAnswer = question.correctAnswer;
+    if (correctAnswer == null) return false;
+    if (!question.isMultiChoice) {
+      return answer == correctAnswer;
+    } else {
+      final correctSet = (correctAnswer is List)
+          ? Set<int>.from(correctAnswer.cast<int>())
+          : <int>{if (correctAnswer is int) correctAnswer};
+      final answerSet = answer is Set<int> ? answer : <int>{};
+      return answerSet.length == correctSet.length &&
+          answerSet.containsAll(correctSet);
+    }
+  }
+
   /// 解析分析结果
   static PersonalityAnalysisResult _parseAnalysisResult(
     String content,
@@ -181,14 +197,18 @@ class KimiService {
       } else if (content.contains('```')) {
         jsonStr = content.split('```')[1].split('```')[0].trim();
       }
-      
+
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
       final rawResults = data['questionResults'] as List;
       final questionResults = <QuestionAnalysisResult>[];
       for (int i = 0; i < rawResults.length; i++) {
         final q = rawResults[i] as Map<String, dynamic>;
-        final matchPercentage = q['matchPercentage'] as int;
-        final fullScore = i < survey.questions.length ? survey.questions[i].questionScore : 0;
+        final question = i < survey.questions.length ? survey.questions[i] : null;
+        final answer = i < answers.length ? answers[i] : null;
+        // 答案完全一致时强制 100%，否则使用 AI 给出的值
+        final matched = question != null && answer != null && _answersMatch(question, answer);
+        final matchPercentage = matched ? 100 : (q['matchPercentage'] as int);
+        final fullScore = question?.questionScore ?? 0;
         final actualScore = (fullScore * matchPercentage / 100).round();
         questionResults.add(QuestionAnalysisResult(
           questionIndex: q['questionIndex'] as int,
@@ -196,7 +216,7 @@ class KimiService {
           matchPercentage: matchPercentage,
           fullScore: fullScore,
           actualScore: actualScore,
-          reason: q['reason'] as String? ?? '',
+          reason: matched ? '与出题者答案完全一致' : (q['reason'] as String? ?? ''),
           creatorAnswer: q['creatorAnswer'] as String? ?? '',
           playerAnswer: q['playerAnswer'] as String? ?? '',
         ));
@@ -236,28 +256,14 @@ class KimiService {
       final answer = answers[i];
       final fullScore = question.questionScore;
       
-      // 计算匹配度（简化逻辑）
+      // 计算匹配度：完全一致给 100%，有答案给 70%，无答案给 0%
       int matchPercentage;
       if (answer == null || (answer is Set && answer.isEmpty)) {
         matchPercentage = 0;
+      } else if (_answersMatch(question, answer)) {
+        matchPercentage = 100;
       } else {
-        // 简单匹配：有答案就给 70%，完全匹配给 100%
-        final correctAnswer = question.correctAnswer;
-        if (!question.isMultiChoice) {
-          matchPercentage = (answer == correctAnswer) ? 100 : 70;
-        } else {
-          final correctSet = (correctAnswer is List) 
-              ? Set<int>.from(correctAnswer)
-              : <int>{if (correctAnswer is int) correctAnswer};
-          final answerSet = answer as Set<int>;
-          if (answerSet.isEmpty) {
-            matchPercentage = 0;
-          } else if (answerSet.containsAll(correctSet) && correctSet.containsAll(answerSet)) {
-            matchPercentage = 100;
-          } else {
-            matchPercentage = 70;
-          }
-        }
+        matchPercentage = 70;
       }
       
       final actualScore = (fullScore * matchPercentage / 100).round();
@@ -313,8 +319,8 @@ class KimiService {
       ));
     }
     
-    final overallMatchPercentage = fullTotalScore > 0 
-        ? (totalScore / fullTotalScore * 100).round() 
+    final overallMatchPercentage = fullTotalScore > 0
+        ? (totalScore / fullTotalScore * 100).round()
         : 0;
     
     if (error != null) {
