@@ -283,22 +283,6 @@ class _HomePageState extends State<HomePage> {
                         TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
                   ),
-                  if (_serverUrl.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.circle,
-                            size: 8, color: Colors.green.shade400),
-                        const SizedBox(width: 4),
-                        Text(
-                          _serverUrl,
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade500),
-                        ),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 48),
                   _FeatureCard(
                     icon: Icons.edit_note_rounded,

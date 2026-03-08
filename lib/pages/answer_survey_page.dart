@@ -574,7 +574,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
         
         // 同性合适度
         _buildAnalysisSection(
-          title: '同性朋友合适度',
+          title: '朋友匹配度',
           icon: Icons.people_outline,
           iconColor: Colors.orange,
           bgColor: Colors.orange.shade50,
@@ -584,7 +584,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
         
         // 异性合适度
         _buildAnalysisSection(
-          title: '异性伴侣合适度',
+          title: '伴侣匹配度',
           icon: Icons.favorite_outline,
           iconColor: Colors.pink,
           bgColor: Colors.pink.shade50,

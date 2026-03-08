@@ -37,7 +37,7 @@ class KimiService {
             {
               'role': 'system',
               'content': '你是一位专业的心理分析师和情感顾问。你的任务是分析出题者和做题者的答题情况，'
-                  '分别给出两人的性格分析，然后评估他们作为同性朋友和异性伴侣的合适度。'
+                  '分别给出两人的性格分析，然后评估他们作为朋友的匹配度和作为伴侣的匹配度。'
                   '请以严格的 JSON 格式返回结果，不要包含任何其他文字。',
             },
             {
@@ -151,16 +151,16 @@ class KimiService {
   "overallMatchPercentage": 75,
   "creatorAnalysis": "出题者是一个外向开朗、注重情感表达的人...",
   "playerAnalysis": "做题者性格内敛沉稳，善于思考...",
-  "sameGenderCompatibility": "作为同性朋友，两人性格互补...适合成为...",
-  "oppositeGenderCompatibility": "作为异性伴侣，两人的匹配度为...恋爱关系中..."
+  "sameGenderCompatibility": "作为朋友，两人性格互补...适合成为...",
+  "oppositeGenderCompatibility": "作为伴侣，两人的匹配度为...恋爱关系中..."
 }
 ''');
     buffer.writeln();
     buffer.writeln('分析要求:');
     buffer.writeln('1. creatorAnalysis: 根据出题者设置的答案，分析其性格特点（150字左右）');
     buffer.writeln('2. playerAnalysis: 根据做题者的答案，分析其性格特点（150字左右）');
-    buffer.writeln('3. sameGenderCompatibility: 分析两人作为同性朋友/闺蜜/兄弟的合适度，包括友谊发展潜力和建议（150字左右）');
-    buffer.writeln('4. oppositeGenderCompatibility: 分析两人作为异性伴侣的合适度，包括匹配度评分、恋爱关系中的优势和挑战、相处建议（200字左右）');
+    buffer.writeln('3. sameGenderCompatibility: 分析两人作为朋友的匹配度，包括友谊发展潜力和建议（150字左右）');
+    buffer.writeln('4. oppositeGenderCompatibility: 分析两人作为伴侣的匹配度，包括匹配度评分、恋爱关系中的优势和挑战、相处建议（200字左右）');
     buffer.writeln('5. matchPercentage: 根据答案相似程度给出 0-100 的整数');
 
     return buffer.toString();
@@ -343,8 +343,8 @@ class KimiService {
       overallMatchPercentage: overallMatchPercentage,
       creatorAnalysis: '出题者是一个注重情感表达、有自己独特见解的人。从答案选择来看，TA对生活有自己的态度和追求。',
       playerAnalysis: '做题者性格较为随和，能够理解和尊重他人的观点，同时也保持着自己的独立思考。',
-      sameGenderCompatibility: '作为同性朋友，两人性格互补，能够相互理解和包容。出题者的主见与做题者的随和形成良好的平衡，适合成为深交的朋友。建议多进行深入的交流，分享彼此的生活经历。',
-      oppositeGenderCompatibility: '作为异性伴侣，两人的匹配度为 $overallMatchPercentage%。出题者的独立个性与做题者的包容性格能够形成良好的互补。恋爱关系中，双方需要多沟通，尊重彼此的差异。建议一起参与双方都感兴趣的活动，增进感情。',
+      sameGenderCompatibility: '作为朋友，两人性格互补，能够相互理解和包容。出题者的主见与做题者的随和形成良好的平衡，适合成为深交的朋友。建议多进行深入的交流，分享彼此的生活经历。',
+      oppositeGenderCompatibility: '作为伴侣，两人的匹配度为 $overallMatchPercentage%。出题者的独立个性与做题者的包容性格能够形成良好的互补。恋爱关系中，双方需要多沟通，尊重彼此的差异。建议一起参与双方都感兴趣的活动，增进感情。',
     );
   }
 }
