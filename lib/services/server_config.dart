@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ServerConfig {
   static const _key = 'server_base_url';
+  static const defaultUrl = 'http://182.92.61.108';
 
   static Future<String?> getBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();

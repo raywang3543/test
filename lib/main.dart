@@ -51,12 +51,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _initApp() async {
-    final url = await ServerConfig.getBaseUrl();
+    String? url = await ServerConfig.getBaseUrl();
     if (url == null || url.isEmpty) {
-      if (mounted) await _showServerConfigDialog(canDismiss: false);
-    } else {
-      setState(() => _serverUrl = url);
+      await ServerConfig.setBaseUrl(ServerConfig.defaultUrl);
+      url = ServerConfig.defaultUrl;
     }
+    setState(() => _serverUrl = url!);
     await _checkUserSurvey();
   }
 
