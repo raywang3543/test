@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter pub:*)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Read(//Users/ray/flutter/bin/cache/**)",
+      "Read(//Users/ray/projects/test/$HOME/development/flutter/bin/cache/**)",
+      "Bash(flutter:*)"
+    ]
+  }
+}

@@ -4,6 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+### Flutter (client)
 ```bash
 flutter pub get          # Install dependencies
 flutter analyze          # Run linter
@@ -14,34 +15,65 @@ flutter build apk        # Build Android release
 flutter build ios        # Build iOS release
 ```
 
+### Python server
+```bash
+cd server
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
 ## Architecture
 
-This is a Flutter survey app (情感测试 / Emotion Test) that lets users create custom questionnaires, answer them, and view scored results. All data is stored locally via `shared_preferences` — there is no backend.
+This is a **client-server** Flutter app (性格匹配测试 / Personality Match Test). Users create personality questionnaires, share them with others to complete, and view AI-analyzed compatibility results.
 
 **State management**: Plain `StatefulWidget` only. No Provider/GetX/Riverpod/BLoC.
 
-**Directory layout:**
+### Backend (`server/`)
+
+FastAPI + SQLite (`emotion_test.db`). Three tables: `user_info`, `surveys`, `events`.
+
+- `database.py` — all SQL operations
+- `main.py` — REST endpoints for `/users`, `/surveys`, `/events`
+
+### Flutter data layer
+
+All persistence goes through the server via HTTP. The call chain is:
+
 ```
-lib/
-├── main.dart                  # App entry + HomePage
-├── models/                    # Data classes with toJson/fromJson
-│   ├── survey_model.dart      # Survey, SurveyQuestion, SurveyOption
-│   └── user_model.dart        # UserProfile
-├── pages/                     # Full-screen StatefulWidgets
-│   ├── create_survey_page.dart
-│   ├── answer_survey_page.dart
-│   ├── user_profile_page.dart
-│   └── edit_user_page.dart
-└── services/                  # SharedPreferences read/write
-    ├── survey_storage.dart    # Key: 'saved_survey'
-    └── user_storage.dart      # Keys: 'user_uid', user profile fields
+Page → DatabaseHelper (thin facade) → ApiClient (HTTP) → FastAPI server
 ```
 
-**Data flow**: Models are serialized to JSON and persisted via service classes. Pages receive data through constructor parameters and navigate with `Navigator.push` + `MaterialPageRoute`. There is one saved survey at a time.
+`DatabaseHelper` uses conditional exports to select the platform-appropriate implementation (`database_helper_io.dart` / `database_helper_web.dart`), but both delegate entirely to `ApiClient`.
 
-**Key behaviors:**
-- `UserProfile.detailedInfo` is only shown when no passing score is set, or when the user's last score meets/exceeds `passingScore`.
-- `AnswerSurveyPage` handles both single-choice (radio) and multi-choice (checkbox) questions; each option carries an integer `score`.
-- `user_storage.dart` generates a UUID4-style UID via `getOrCreateUid()` and persists it permanently.
+`ServerConfig` stores the base URL in `shared_preferences`. Default: `http://182.92.61.108`. Users can change it from the home screen (the `dns` icon).
 
-**UI**: Material 3 with Chinese-language labels throughout. Gradient AppBars, `AnimatedSwitcher`/`AnimatedContainer` for selection feedback.
+### Key models
+
+- `Survey` / `SurveyQuestion` / `SurveyOption` — questionnaire structure; `questionsJson` is stored as a serialized JSON string on the server
+- `SurveyQuestion.correctAnswer` — the survey *creator's* answer (single: `int` index; multi: `List<int>`)
+- `UserProfile` (in `user_model.dart`) — `basicInfo` (public), `detailedInfo` (revealed only when score ≥ `passingScore`), `passingScore`
+
+### AI analysis
+
+`KimiService` calls the Moonshot (Kimi) API (`moonshot-v1-8k`) after a survey is submitted. It compares the answerer's choices against the creator's `correctAnswer` per question and returns a `PersonalityAnalysisResult` with per-question match percentages, overall score, and four prose fields (creator/player personality + friend/partner compatibility). Falls back to a deterministic mock result when the API is unavailable.
+
+### Pages
+
+| Page | Purpose |
+|------|---------|
+| `HomePage` | Entry; links to create/take tests; server URL config |
+| `CreateSurveyPage` | Build a new questionnaire with scoring |
+| `TestListPage` | Browse all surveys on the server |
+| `AnswerSurveyPage` | Take a survey (single & multi-choice) |
+| `UserListPage` | Browse all users |
+| `UserDetailPage` | View a user's profile and test history |
+| `UserProfilePage` | Edit own profile |
+| `EventPage` | View all submission events |
+
+### Data flow for a survey session
+
+1. Creator fills `CreateSurveyPage`, which POSTs to `/surveys` with `questionsJson` + their UID.
+2. Answerer picks a survey from `TestListPage` (GET `/surveys`), completes `AnswerSurveyPage`.
+3. On submit: `KimiService.analyzePersonalityDetailed` runs, score is POSTed to `/events`, result shown.
+4. `UserDetail`/`EventPage` query `/events` to display history.

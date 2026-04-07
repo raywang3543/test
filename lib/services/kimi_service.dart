@@ -11,6 +11,74 @@ class KimiService {
   static const String _baseUrl = 'https://api.moonshot.cn/v1';
   static const String _model = 'moonshot-v1-8k';
 
+  /// 自动生成性格匹配测试题，返回题目列表（含标准答案和分数）
+  /// 每个 Map 包含：title, isMultiChoice, options, correctAnswer, score
+  static Future<List<Map<String, dynamic>>> generateSurveyQuestions() async {
+    final seed = DateTime.now().millisecondsSinceEpoch;
+    final prompt = '''
+请生成10道用于测试两人性格匹配程度的题目。随机种子：$seed
+
+要求：
+1. 10道题，其中至少3道单选题、至少3道多选题，其余随机。
+2. 每道题平均3个选项，允许2~4个，选项内容不得重复。
+3. 题目覆盖不同领域，如：价值观、生活方式、情感表达、社交习惯、娱乐爱好、消费观、未来规划等，每次生成请随机从中选择，不要和常见模板雷同。
+4. 每道题需包含出题者的标准答案（单选为选项下标整数，从0开始；多选为下标整数数组）。
+5. 每道题需包含本题分值（正整数，根据题目重要程度在5~20之间合理分配，10道题总分建议100分）。
+6. 选项内容简洁（10字以内），题目内容清晰（20字以内），不要有任何解析说明。
+7. 严格按以下 JSON 数组格式返回，不要包含任何其他文字或代码块标记：
+
+[
+  {
+    "title": "题目内容",
+    "isMultiChoice": false,
+    "options": ["选项1", "选项2", "选项3"],
+    "correctAnswer": 0,
+    "score": 10
+  },
+  {
+    "title": "多选题示例",
+    "isMultiChoice": true,
+    "options": ["选项1", "选项2", "选项3"],
+    "correctAnswer": [0, 2],
+    "score": 15
+  }
+]
+''';
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/chat/completions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_apiKey',
+      },
+      body: jsonEncode({
+        'model': _model,
+        'messages': [
+          {
+            'role': 'system',
+            'content': '你是一位专业的心理测评设计师，擅长设计有趣、多样的性格匹配题目。',
+          },
+          {'role': 'user', 'content': prompt},
+        ],
+        'temperature': 0.9,
+        'max_tokens': 2000,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Kimi API 错误 ${response.statusCode}');
+    }
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    String content = data['choices'][0]['message']['content'] as String;
+    // 移除可能的 markdown 代码块标记
+    if (content.contains('```')) {
+      content = content.replaceAll(RegExp(r'```[a-z]*'), '').replaceAll('```', '').trim();
+    }
+    final list = jsonDecode(content) as List;
+    return list.cast<Map<String, dynamic>>();
+  }
+
   /// 分析用户答题结果，返回详细的匹配分析
   static Future<PersonalityAnalysisResult> analyzePersonalityDetailed({
     required Survey survey,

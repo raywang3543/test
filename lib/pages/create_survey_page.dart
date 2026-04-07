@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/survey_model.dart';
+import '../services/kimi_service.dart';
 import '../services/survey_storage.dart';
 import '../services/user_storage.dart';
 
@@ -49,6 +50,7 @@ class CreateSurveyPage extends StatefulWidget {
 class _CreateSurveyPageState extends State<CreateSurveyPage> {
   final List<_QuestionData> _questions = [_QuestionData()];
   final ScrollController _scrollController = ScrollController();
+  bool _isGenerating = false;
 
   @override
   void dispose() {
@@ -57,6 +59,52 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
     }
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _autoGenerate() async {
+    setState(() => _isGenerating = true);
+    try {
+      final raw = await KimiService.generateSurveyQuestions();
+      for (final q in _questions) {
+        q.dispose();
+      }
+      setState(() {
+        _questions.clear();
+        for (final item in raw) {
+          final q = _QuestionData();
+          q.titleController.text = item['title'] as String;
+          q.isMultiChoice = item['isMultiChoice'] as bool;
+          final ca = item['correctAnswer'];
+          if (q.isMultiChoice) {
+            q.correctAnswer = Set<int>.from((ca as List).cast<int>());
+          } else {
+            q.correctAnswer = ca as int;
+          }
+          q.scoreController.text = '${item['score'] ?? 10}';
+          for (final opt in q.options) {
+            opt.dispose();
+          }
+          q.options.clear();
+          for (final optText in (item['options'] as List)) {
+            final o = _OptionData();
+            o.contentController.text = optText as String;
+            q.options.add(o);
+          }
+          _questions.add(q);
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('生成失败：$e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGenerating = false);
+    }
   }
 
   void _addQuestion() {
@@ -206,6 +254,22 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
   }
 
   Future<void> _startSurvey() async {
+    if (_isGenerating) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('题目生成中'),
+          content: const Text('题目正在自动生成，生成完成后才能提交测试。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('知道了'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     if (!_validate()) return;
 
     // 获取当前用户的 UID 和基础信息
@@ -262,6 +326,21 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        leading: _isGenerating
+            ? const Padding(
+                padding: EdgeInsets.all(14),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white),
+                ),
+              )
+            : IconButton(
+                onPressed: _autoGenerate,
+                icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+                tooltip: '自动生成题目',
+              ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
