@@ -61,10 +61,43 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
     super.dispose();
   }
 
-  Future<void> _autoGenerate() async {
+  Future<void> _showGenerateDialog() async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('AI 生成题目'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: '可输入主题或要求，例如：围绕旅行偏好出题（可留空）',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      _autoGenerate(userInput: controller.text);
+    }
+    controller.dispose();
+  }
+
+  Future<void> _autoGenerate({String? userInput}) async {
     setState(() => _isGenerating = true);
     try {
-      final raw = await KimiService.generateSurveyQuestions();
+      final raw = await KimiService.generateSurveyQuestions(userInput: userInput);
       for (final q in _questions) {
         q.dispose();
       }
@@ -337,7 +370,7 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
                 ),
               )
             : IconButton(
-                onPressed: _autoGenerate,
+                onPressed: _showGenerateDialog,
                 icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
                 tooltip: '自动生成题目',
               ),

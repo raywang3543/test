@@ -13,11 +13,14 @@ class KimiService {
 
   /// 自动生成性格匹配测试题，返回题目列表（含标准答案和分数）
   /// 每个 Map 包含：title, isMultiChoice, options, correctAnswer, score
-  static Future<List<Map<String, dynamic>>> generateSurveyQuestions() async {
+  static Future<List<Map<String, dynamic>>> generateSurveyQuestions({String? userInput}) async {
     final seed = DateTime.now().millisecondsSinceEpoch;
+    final userHint = (userInput != null && userInput.trim().isNotEmpty)
+        ? '\n用户补充要求：${userInput.trim()}\n'
+        : '';
     final prompt = '''
 请生成10道用于测试两人性格匹配程度的题目。随机种子：$seed
-
+$userHint
 要求：
 1. 10道题，其中至少3道单选题、至少3道多选题，其余随机。
 2. 每道题平均3个选项，允许2~4个，选项内容不得重复。
