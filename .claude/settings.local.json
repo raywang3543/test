@@ -8,7 +8,14 @@
       "Bash(pip3 install:*)",
       "Read(//Users/ray/flutter/bin/cache/**)",
       "Read(//Users/ray/projects/test/$HOME/development/flutter/bin/cache/**)",
-      "Bash(flutter:*)"
+      "Bash(flutter:*)",
+      "Bash(/Users/ray/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(open *)",
+      "Bash(git commit *)",
+      "Bash(git *)",
+      "Bash(dart run *)"
     ]
   }
 }

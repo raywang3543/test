@@ -1,0 +1,201 @@
+<h2>最终图标规格预览</h2>
+<p class="subtitle">确认无误后将输出设计文档与实现计划</p>
+
+<style>
+  .spec-layout {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 28px 0;
+  }
+  .spec-left { text-align: center; }
+  .spec-right {
+    background: #fff;
+    border: 2.5px solid #0E0E12;
+    border-radius: 16px;
+    padding: 20px 24px;
+    min-width: 240px;
+    box-shadow: 4px 4px 0 #0E0E12;
+  }
+
+  /* Main icon */
+  .main-icon {
+    width: 160px; height: 160px;
+    background: #FF5EA8;
+    border-radius: 36px;
+    border: 3px solid #0E0E12;
+    box-shadow: 6px 6px 0 #0E0E12;
+    margin: 0 auto 16px;
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .deco { position: absolute; font-weight: 900; line-height: 1; pointer-events: none; }
+
+  /* Size strip */
+  .size-strip {
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+    justify-content: center;
+    margin-top: 18px;
+  }
+  .sz-item { text-align: center; }
+  .sz-icon {
+    background: #FF5EA8;
+    border: 2px solid #0E0E12;
+    border-radius: 0;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sz-label { font-size: 9px; color: #7A7A85; margin-top: 4px; font-weight: 600; }
+
+  /* Spec table */
+  .spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1.5px solid #EDE4CE;
+    gap: 12px;
+  }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-key { font-size: 11px; color: #7A7A85; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .spec-val { font-size: 12px; font-weight: 700; color: #0E0E12; text-align: right; }
+  .swatch {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 1.5px solid #0E0E12;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  .spec-right h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0E0E12;
+    margin: 0 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Heart SVG helper */
+  .hearts-wrap { position: relative; width: 108px; height: 96px; }
+  .h { position: absolute; }
+</style>
+
+<div class="spec-layout">
+
+  <!-- Left: Visual -->
+  <div class="spec-left">
+    <!-- 160px main preview -->
+    <div class="main-icon">
+      <span class="deco" style="top:10px;left:12px;font-size:12px;color:#0E0E12;opacity:0.45">✦</span>
+      <span class="deco" style="bottom:12px;right:14px;font-size:9px;color:#0E0E12;opacity:0.35">✧</span>
+      <span class="deco" style="top:13px;right:13px;font-size:8px;color:#0E0E12;opacity:0.3">+</span>
+
+      <div class="hearts-wrap">
+        <!-- Back: Lime, offset +16px right, +16px down -->
+        <div class="h" style="left:28px;top:18px;width:72px;height:62px;">
+          <svg viewBox="0 0 72 62" fill="none">
+            <path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="3"/>
+            <path d="M16 12C13 16 12 21 13.5 25" stroke="white" stroke-width="2.2" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </div>
+        <!-- Front: Cream -->
+        <div class="h" style="left:0;top:0;width:72px;height:62px;">
+          <svg viewBox="0 0 72 62" fill="none">
+            <path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="3"/>
+            <path d="M16 12C13 16 12 21 13.5 25" stroke="#FF5EA8" stroke-width="2.2" stroke-linecap="round" opacity="0.65"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#7A7A85;font-weight:600;margin-bottom:4px;">160 × 160 预览</div>
+
+    <!-- Size strip -->
+    <div class="size-strip">
+      <div class="sz-item">
+        <div class="sz-icon" style="width:64px;height:64px;border-radius:15px;">
+          <div style="position:relative;width:43px;height:38px;">
+            <svg width="43" height="38" viewBox="0 0 72 62" fill="none" style="position:absolute;left:12px;top:8px"><path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="3"/></svg>
+            <svg width="43" height="38" viewBox="0 0 72 62" fill="none" style="position:absolute;left:0;top:0"><path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="3"/></svg>
+          </div>
+        </div>
+        <div class="sz-label">64px</div>
+      </div>
+      <div class="sz-item">
+        <div class="sz-icon" style="width:48px;height:48px;border-radius:11px;">
+          <div style="position:relative;width:32px;height:28px;">
+            <svg width="32" height="28" viewBox="0 0 72 62" fill="none" style="position:absolute;left:8px;top:6px"><path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="3.5"/></svg>
+            <svg width="32" height="28" viewBox="0 0 72 62" fill="none" style="position:absolute;left:0;top:0"><path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="3.5"/></svg>
+          </div>
+        </div>
+        <div class="sz-label">48px</div>
+      </div>
+      <div class="sz-item">
+        <div class="sz-icon" style="width:29px;height:29px;border-radius:7px;">
+          <div style="position:relative;width:20px;height:17px;">
+            <svg width="20" height="17" viewBox="0 0 72 62" fill="none" style="position:absolute;left:5px;top:4px"><path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="4"/></svg>
+            <svg width="20" height="17" viewBox="0 0 72 62" fill="none" style="position:absolute;left:0;top:0"><path d="M36 57C36 57 2 36 2 16C2 8 8 2 17 2C23 2 29 6 36 13C43 6 49 2 55 2C64 2 70 8 70 16C70 36 36 57 36 57Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="4"/></svg>
+          </div>
+        </div>
+        <div class="sz-label">29px</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Spec table -->
+  <div class="spec-right">
+    <h3>设计规格</h3>
+
+    <div class="spec-row">
+      <span class="spec-key">背景色</span>
+      <span class="spec-val"><span class="swatch" style="background:#FF5EA8"></span>#FF5EA8</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">前景心形</span>
+      <span class="spec-val"><span class="swatch" style="background:#FFF5E1"></span>#FFF5E1 奶油白</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">背景心形</span>
+      <span class="spec-val"><span class="swatch" style="background:#C6FF3D"></span>#C6FF3D 荧光绿</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">描边色</span>
+      <span class="spec-val"><span class="swatch" style="background:#0E0E12"></span>#0E0E12 墨黑</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">描边宽度</span>
+      <span class="spec-val">2.5px（1024px画布）</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">错位偏移</span>
+      <span class="spec-val">+25% right, +25% down</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">圆角</span>
+      <span class="spec-val">22.5%（iOS/Android自适应）</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">硬边阴影</span>
+      <span class="spec-val">offset(4,4) blur=0 #0E0E12</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">装饰元素</span>
+      <span class="spec-val">✦ ✧ + 三个角落</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-key">输出尺寸</span>
+      <span class="spec-val">1024×1024 SVG / PNG</span>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:8px;">
+  <p class="subtitle">满意这个方案吗？确认后我将写设计文档并制定实现计划</p>
+</div>

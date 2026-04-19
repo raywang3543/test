@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/survey_model.dart';
 import '../services/survey_storage.dart';
 import '../services/user_storage.dart';
+import '../theme/y2k_theme.dart';
+import '../theme/y2k_widgets.dart';
 import 'answer_survey_page.dart';
 
-/// 测试题列表页面 - 显示所有保存在本地的 UID 和用户基础信息
 class TestListPage extends StatefulWidget {
   const TestListPage({super.key});
 
@@ -33,18 +34,13 @@ class _TestListPageState extends State<TestListPage> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
-    // 加载所有测试题
+
     final allSurveys = await SurveyStorage.loadAll();
     final currentUid = await UserStorage.getCurrentUid();
 
-    // 构建用户信息列表
     final List<SurveyUserInfo> userInfos = [];
     for (final survey in allSurveys) {
       if (survey.uid == currentUid) continue;
-      // 从Survey中获取创建者的基础信息
-      debugPrint('加载测试 - UID: ${survey.uid}');
-      debugPrint('加载测试 - 基础信息: "${survey.creatorBasicInfo}"');
       userInfos.add(SurveyUserInfo(
         uid: survey.uid,
         survey: survey,
@@ -52,11 +48,10 @@ class _TestListPageState extends State<TestListPage> {
         createdAt: survey.createdAt,
       ));
     }
-    
-    // 按创建时间倒序排列
-    userInfos.sort((a, b) => 
-      (b.createdAt ?? DateTime(1970)).compareTo(a.createdAt ?? DateTime(1970)));
-    
+
+    userInfos.sort((a, b) =>
+        (b.createdAt ?? DateTime(1970)).compareTo(a.createdAt ?? DateTime(1970)));
+
     if (mounted) {
       setState(() {
         _surveyUsers = userInfos;
@@ -66,7 +61,6 @@ class _TestListPageState extends State<TestListPage> {
     }
   }
 
-  /// 应用搜索过滤
   void _applyFilter() {
     if (_searchQuery.isEmpty) {
       _filteredUsers = List.from(_surveyUsers);
@@ -78,7 +72,6 @@ class _TestListPageState extends State<TestListPage> {
     }
   }
 
-  /// 处理搜索输入变化
   void _onSearchChanged(String value) {
     setState(() {
       _searchQuery = value.trim();
@@ -86,7 +79,6 @@ class _TestListPageState extends State<TestListPage> {
     });
   }
 
-  /// 清除搜索
   void _clearSearch() {
     _searchController.clear();
     setState(() {
@@ -95,340 +87,274 @@ class _TestListPageState extends State<TestListPage> {
     });
   }
 
-
-
   void _goToAnswerSurvey(Survey survey) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => AnswerSurveyPage(survey: survey),
-      ),
+      MaterialPageRoute(builder: (_) => AnswerSurveyPage(survey: survey)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text('选择测试'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _loadData,
-            icon: const Icon(Icons.refresh),
-            tooltip: '刷新',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 搜索框
-          _buildSearchBar(colorScheme),
-          // 内容区域
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildContent(colorScheme),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建搜索栏
-  Widget _buildSearchBar(ColorScheme colorScheme) {
-    return Container(
-      color: colorScheme.primary,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: TextField(
-        controller: _searchController,
-        onChanged: _onSearchChanged,
-        decoration: InputDecoration(
-          hintText: '搜索 UID...',
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-          prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  onPressed: _clearSearch,
-                  icon: Icon(Icons.clear, color: Colors.white.withValues(alpha: 0.7)),
-                  tooltip: '清除',
-                )
-              : null,
-          filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.15),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return Y2KScaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopBar(),
+            _buildSearchBar(),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Y2K.ink, strokeWidth: 3))
+                  : _buildContent(),
+            ),
+          ],
         ),
-        style: const TextStyle(color: Colors.white, fontSize: 15),
-        textInputAction: TextInputAction.search,
       ),
     );
   }
 
-  /// 构建内容区域
-  Widget _buildContent(ColorScheme colorScheme) {
-    if (_surveyUsers.isEmpty) {
-      return _buildEmptyView(colorScheme, '暂无测试题', '请先创建测试题');
-    }
-    
-    if (_filteredUsers.isEmpty) {
-      return _buildEmptyView(colorScheme, '未找到匹配的 UID', '请尝试其他搜索词');
-    }
-    
-    return _buildListView(colorScheme);
-  }
-
-  /// 构建空状态视图
-  Widget _buildEmptyView(ColorScheme colorScheme, String title, String subtitle) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
         children: [
-          Icon(
-            _searchQuery.isNotEmpty ? Icons.search_off_outlined : Icons.quiz_outlined,
-            size: 80,
-            color: Colors.grey.shade300,
+          Y2KChip(
+            label: '← 返回',
+            background: Colors.transparent,
+            onTap: () => Navigator.pop(context),
           ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.w500,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TESTS · 选择题库', style: Y2K.monoSm.copyWith(color: Y2K.muted)),
+                const Text(
+                  '开始测试',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5, color: Y2K.ink),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade400,
-            ),
+          Y2KButton(
+            label: '刷新',
+            icon: Icons.refresh_rounded,
+            kind: Y2KButtonKind.dark,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            fontSize: 13,
+            onPressed: _loadData,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildListView(ColorScheme colorScheme) {
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Y2K.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Y2K.ink, width: 1.5),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: TextField(
+          controller: _searchController,
+          onChanged: _onSearchChanged,
+          style: const TextStyle(
+              fontFamily: 'monospace', fontSize: 14, color: Y2K.ink, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: '搜索 UID…',
+            hintStyle: Y2K.monoSm.copyWith(color: Y2K.muted, fontSize: 13),
+            prefixIcon: const Icon(Icons.search_rounded, color: Y2K.ink),
+            filled: false,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    onPressed: _clearSearch,
+                    icon: const Icon(Icons.close, color: Y2K.ink, size: 18),
+                  )
+                : null,
+          ),
+          textInputAction: TextInputAction.search,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_surveyUsers.isEmpty) {
+      return _buildEmpty('暂无可用的测试', '请先让朋友或创建者生成一份测试题');
+    }
+    if (_filteredUsers.isEmpty) {
+      return _buildEmpty('没有匹配', '尝试换个 UID 关键字');
+    }
     return RefreshIndicator(
       onRefresh: _loadData,
+      color: Y2K.ink,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
         itemCount: _filteredUsers.length,
-        itemBuilder: (context, index) => _buildUserCard(
-          _filteredUsers[index],
-          colorScheme,
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildUserCard(_filteredUsers[index]),
         ),
       ),
     );
   }
 
-  Widget _buildUserCard(SurveyUserInfo userInfo, ColorScheme colorScheme) {
-    // 高亮匹配的 UID 部分
+  Widget _buildEmpty(String title, String subtitle) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 74,
+              height: 74,
+              decoration: BoxDecoration(
+                color: Y2K.gold,
+                shape: BoxShape.circle,
+                border: Border.all(color: Y2K.ink, width: 2),
+                boxShadow: Y2K.shadow(offset: 4),
+              ),
+              child: const Icon(Icons.search_off_rounded, size: 34, color: Y2K.ink),
+            ),
+            const SizedBox(height: 18),
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Y2K.ink)),
+            const SizedBox(height: 6),
+            Text(subtitle, style: Y2K.bodyMuted, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserCard(SurveyUserInfo userInfo) {
     final displayUid = _highlightMatch(userInfo.uid, _searchQuery);
-    
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _goToAnswerSurvey(userInfo.survey),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+
+    return Y2KCard(
+      onTap: () => _goToAnswerSurvey(userInfo.survey),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: Y2K.pink,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Y2K.ink, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('UID', style: Y2K.monoSm.copyWith(color: Y2K.muted)),
+                    const SizedBox(height: 2),
+                    RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Y2K.ink,
+                          fontFamily: 'monospace',
+                        ),
+                        children: displayUid,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Y2KTag(label: '${userInfo.survey.questions.length} Q', background: Y2K.lime),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Y2KDashedDivider(),
+          const SizedBox(height: 12),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 头部：UID 和题目数量
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.person_outline,
-                      color: colorScheme.primary,
-                      size: 24,
-                    ),
+              const Icon(Icons.info_outline, size: 14, color: Y2K.muted),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  userInfo.basicInfo.isNotEmpty ? userInfo.basicInfo : '未填写基础信息',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: userInfo.basicInfo.isNotEmpty ? Y2K.ink2 : Y2K.muted,
+                    fontStyle: userInfo.basicInfo.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                    height: 1.4,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'UID',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        RichText(
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                              fontFamily: 'monospace',
-                            ),
-                            children: displayUid,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              
-              // 基础信息
-              Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 14,
-                    color: Colors.grey.shade500,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      userInfo.basicInfo.isNotEmpty ? userInfo.basicInfo : '未填写基础信息',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: userInfo.basicInfo.isNotEmpty 
-                            ? Colors.grey.shade600 
-                            : Colors.grey.shade400,
-                        fontStyle: userInfo.basicInfo.isNotEmpty 
-                            ? FontStyle.normal 
-                            : FontStyle.italic,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              
-              // 题目数量和创建时间
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${userInfo.survey.questions.length} 题',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (userInfo.createdAt != null)
-                    Text(
-                      _formatDate(userInfo.createdAt!),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
-                  const Spacer(),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.grey.shade400,
-                  ),
-                ],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              if (userInfo.createdAt != null)
+                Text(
+                  _formatDate(userInfo.createdAt!),
+                  style: Y2K.monoSm.copyWith(color: Y2K.muted),
+                ),
+              const Spacer(),
+              const Icon(Icons.arrow_forward_rounded, size: 18, color: Y2K.ink),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  /// 高亮匹配的文字
   List<TextSpan> _highlightMatch(String text, String query) {
-    if (query.isEmpty) {
-      return [TextSpan(text: text)];
-    }
-    
+    if (query.isEmpty) return [TextSpan(text: text)];
     final lowerText = text.toLowerCase();
     final lowerQuery = query.toLowerCase();
     final List<TextSpan> spans = [];
     int start = 0;
-    
     while (true) {
       final index = lowerText.indexOf(lowerQuery, start);
       if (index == -1) {
-        if (start < text.length) {
-          spans.add(TextSpan(text: text.substring(start)));
-        }
+        if (start < text.length) spans.add(TextSpan(text: text.substring(start)));
         break;
       }
-      
-      // 添加匹配前的文本
-      if (index > start) {
-        spans.add(TextSpan(text: text.substring(start, index)));
-      }
-      
-      // 添加高亮的匹配文本
+      if (index > start) spans.add(TextSpan(text: text.substring(start, index)));
       spans.add(TextSpan(
         text: text.substring(index, index + query.length),
         style: const TextStyle(
-          backgroundColor: Color(0xFFFFFF00),
-          fontWeight: FontWeight.bold,
+          backgroundColor: Y2K.lime,
+          fontWeight: FontWeight.w800,
+          color: Y2K.ink,
         ),
       ));
-      
       start = index + query.length;
     }
-    
     return spans;
   }
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    
     if (diff.inDays == 0) {
       if (diff.inHours == 0) {
-        if (diff.inMinutes == 0) {
-          return '刚刚';
-        }
+        if (diff.inMinutes == 0) return '刚刚';
         return '${diff.inMinutes} 分钟前';
       }
       return '${diff.inHours} 小时前';
@@ -442,7 +368,6 @@ class _TestListPageState extends State<TestListPage> {
   }
 }
 
-/// 测试题用户信息
 class SurveyUserInfo {
   final String uid;
   final Survey survey;

@@ -1,0 +1,129 @@
+<h2>图标背景色</h2>
+<p class="subtitle">同样的Neo-Y2K双心 — 哪个底色最好看？</p>
+
+<style>
+  .icon-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 32px 0;
+  }
+  .icon-card {
+    background: #fff;
+    border: 2.5px solid #0E0E12;
+    border-radius: 20px;
+    padding: 24px 20px 18px;
+    width: 160px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 #0E0E12;
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-align: center;
+  }
+  .icon-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #0E0E12; }
+  .icon-preview {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 14px;
+    border-radius: 22px;
+    border: 2.5px solid #0E0E12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .icon-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 5px; color: #0E0E12; }
+  .icon-card p { font-size: 11px; color: #7A7A85; margin: 0; line-height: 1.4; }
+  .kw { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-top: 8px; border: 1.5px solid #0E0E12; }
+
+  .hearts-wrap { position: relative; width: 68px; height: 60px; }
+  .h-left { position: absolute; left: 0; top: 6px; width: 44px; height: 38px; }
+  .h-right { position: absolute; right: 0; top: 0; width: 44px; height: 38px; }
+  .h-left svg, .h-right svg { width: 100%; height: 100%; }
+  .deco { position: absolute; font-weight: 900; }
+</style>
+
+<!-- helper macro: reuse the same hearts SVG across all 4 cards -->
+
+<div class="icon-grid">
+
+  <!-- A: Cream -->
+  <div class="icon-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="icon-preview" style="background:#FFF5E1">
+      <div class="hearts-wrap">
+        <div class="h-left">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#FF5EA8" stroke="#0E0E12" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/></svg>
+        </div>
+        <div class="h-right">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/></svg>
+        </div>
+        <span class="deco" style="font-size:10px;top:-4px;right:6px;color:#0E0E12">✦</span>
+        <span class="deco" style="font-size:8px;bottom:2px;left:2px;color:#0E0E12">✧</span>
+      </div>
+    </div>
+    <h3>奶油白</h3>
+    <p>#FFF5E1<br>与App背景色一致</p>
+    <span class="kw" style="background:#FFF5E1">柔和</span>
+  </div>
+
+  <!-- B: Ink Black -->
+  <div class="icon-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="icon-preview" style="background:#0E0E12">
+      <div class="hearts-wrap">
+        <div class="h-left">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#FF5EA8" stroke="#FF5EA8" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/></svg>
+        </div>
+        <div class="h-right">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#C6FF3D" stroke="#C6FF3D" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/></svg>
+        </div>
+        <span class="deco" style="font-size:10px;top:-4px;right:6px;color:#C6FF3D">✦</span>
+        <span class="deco" style="font-size:8px;bottom:2px;left:2px;color:#FF5EA8">✧</span>
+      </div>
+    </div>
+    <h3>墨黑</h3>
+    <p>#0E0E12<br>高对比Y2K暗色</p>
+    <span class="kw" style="background:#0E0E12;color:#C6FF3D">强烈</span>
+  </div>
+
+  <!-- C: Lime -->
+  <div class="icon-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="icon-preview" style="background:#C6FF3D">
+      <div class="hearts-wrap">
+        <div class="h-left">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#FF5EA8" stroke="#0E0E12" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/></svg>
+        </div>
+        <div class="h-right">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="#C6FF3D" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/></svg>
+        </div>
+        <span class="deco" style="font-size:10px;top:-4px;right:6px;color:#0E0E12">✦</span>
+        <span class="deco" style="font-size:8px;bottom:2px;left:2px;color:#0E0E12">✧</span>
+      </div>
+    </div>
+    <h3>荧光绿</h3>
+    <p>#C6FF3D<br>App主强调色</p>
+    <span class="kw" style="background:#C6FF3D">活力</span>
+  </div>
+
+  <!-- D: Pink -->
+  <div class="icon-card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="icon-preview" style="background:#FF5EA8">
+      <div class="hearts-wrap">
+        <div class="h-left">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="#FF5EA8" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/></svg>
+        </div>
+        <div class="h-right">
+          <svg viewBox="0 0 44 38"><path d="M22 34C22 34 2 22 2 10C2 5 6 2 11 2C15 2 19 4 22 8C25 4 29 2 33 2C38 2 42 5 42 10C42 22 22 34 22 34Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2.2"/><path d="M11 8C9 10 8.5 13 9.5 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/></svg>
+        </div>
+        <span class="deco" style="font-size:10px;top:-4px;right:6px;color:#0E0E12">✦</span>
+        <span class="deco" style="font-size:8px;bottom:2px;left:2px;color:#0E0E12">✧</span>
+      </div>
+    </div>
+    <h3>热粉红</h3>
+    <p>#FF5EA8<br>App第二强调色</p>
+    <span class="kw" style="background:#FF5EA8;color:#fff">甜美</span>
+  </div>
+
+</div>
+
+<p class="subtitle" style="text-align:center">点击选择背景色，或告诉我你的想法</p>

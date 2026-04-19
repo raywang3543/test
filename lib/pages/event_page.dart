@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
+import '../theme/y2k_theme.dart';
+import '../theme/y2k_widgets.dart';
 import 'user_detail_page.dart';
 
 class EventPage extends StatefulWidget {
@@ -13,8 +15,8 @@ class EventPage extends StatefulWidget {
 
 class _EventPageState extends State<EventPage> {
   bool _isLoading = true;
-  List<_EventItem> _completedMine = [];   // 完成我的测试题的用户
-  List<_EventItem> _iCompleted = [];       // 我完成的测试题的用户
+  List<_EventItem> _completedMine = [];
+  List<_EventItem> _iCompleted = [];
 
   @override
   void initState() {
@@ -33,7 +35,6 @@ class _EventPageState extends State<EventPage> {
       return;
     }
 
-    // 完成我的测试题的用户（creatorUid = me，按 answererUid 分组取最新）
     final creatorEvents = await db.getEventsByCreatorUid(currentUid);
     final Map<String, Map<String, dynamic>> answererMap = {};
     for (final e in creatorEvents) {
@@ -42,7 +43,6 @@ class _EventPageState extends State<EventPage> {
       if (!answererMap.containsKey(uid)) answererMap[uid] = e;
     }
 
-    // 我完成的测试题（answererUid = me，按 creatorUid 分组取最新）
     final answererEvents = await db.getEventsByAnswererUid(currentUid);
     final Map<String, Map<String, dynamic>> creatorMap = {};
     for (final e in answererEvents) {
@@ -81,17 +81,37 @@ class _EventPageState extends State<EventPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('确认清空'),
-        content: Text(isCreator ? '确定清空"完成我测试题的用户"的所有记录？' : '确定清空"我完成的测试题"的所有记录？'),
+        backgroundColor: Y2K.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Y2K.ink, width: 2),
+        ),
+        title: const Text(
+          '确认清空',
+          style: TextStyle(
+              fontWeight: FontWeight.w800, color: Y2K.ink, fontSize: 18),
+        ),
+        content: Text(
+          isCreator ? '确定清空"完成我测试题的用户"的所有记录？' : '确定清空"我完成的测试题"的所有记录？',
+          style: const TextStyle(color: Y2K.ink2, fontSize: 14, height: 1.5),
+        ),
         actions: [
-          TextButton(
+          Y2KButton(
+            label: '取消',
+            kind: Y2KButtonKind.ghost,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            fontSize: 13,
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
           ),
-          FilledButton(
+          Y2KButton(
+            label: '清空',
+            icon: Icons.delete_outline_rounded,
+            kind: Y2KButtonKind.accent,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            fontSize: 13,
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('清空'),
           ),
         ],
       ),
@@ -124,56 +144,108 @@ class _EventPageState extends State<EventPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    return Y2KScaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopBar(),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                          color: Y2K.ink, strokeWidth: 3))
+                  : RefreshIndicator(
+                      onRefresh: _loadData,
+                      color: Y2K.ink,
+                      child: ListView(
+                        padding:
+                            const EdgeInsets.fromLTRB(20, 4, 20, 32),
+                        children: [
+                          _buildSection(
+                            indexLabel: '01',
+                            title: '完成我的测试',
+                            subtitle: 'INCOMING · 他人的成绩',
+                            accent: Y2K.pink,
+                            iconColor: Colors.white,
+                            icon: Icons.people_alt_outlined,
+                            items: _completedMine,
+                            emptyText: '暂无用户完成你的测试题',
+                            onClear: _completedMine.isEmpty
+                                ? null
+                                : () => _clearEvents(isCreator: true),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildSection(
+                            indexLabel: '02',
+                            title: '我完成的测试',
+                            subtitle: 'OUTGOING · 我的答题',
+                            accent: Y2K.lime,
+                            iconColor: Y2K.ink,
+                            icon: Icons.assignment_turned_in_outlined,
+                            items: _iCompleted,
+                            emptyText: '你还没有完成任何测试题',
+                            onClear: _iCompleted.isEmpty
+                                ? null
+                                : () => _clearEvents(isCreator: false),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text('事件'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(
+        children: [
+          Y2KChip(
+            label: '← 返回',
+            background: Colors.transparent,
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('EVENTS · 事件流',
+                    style: Y2K.monoSm.copyWith(color: Y2K.muted)),
+                const Text(
+                  '答题记录',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      color: Y2K.ink),
+                ),
+              ],
+            ),
+          ),
+          Y2KButton(
+            label: '刷新',
+            icon: Icons.refresh_rounded,
+            kind: Y2KButtonKind.dark,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            fontSize: 13,
             onPressed: _loadData,
-            icon: const Icon(Icons.refresh),
-            tooltip: '刷新',
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildSection(
-                    colorScheme: colorScheme,
-                    title: '完成我的测试',
-                    icon: Icons.people_alt_outlined,
-                    items: _completedMine,
-                    emptyText: '暂无用户完成你的测试题',
-                    onClear: _completedMine.isEmpty ? null : () => _clearEvents(isCreator: true),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSection(
-                    colorScheme: colorScheme,
-                    title: '我完成的测试',
-                    icon: Icons.assignment_turned_in_outlined,
-                    items: _iCompleted,
-                    emptyText: '你还没有完成任何测试题',
-                    onClear: _iCompleted.isEmpty ? null : () => _clearEvents(isCreator: false),
-                  ),
-                ],
-              ),
-            ),
     );
   }
 
   Widget _buildSection({
-    required ColorScheme colorScheme,
+    required String indexLabel,
     required String title,
+    required String subtitle,
+    required Color accent,
+    required Color iconColor,
     required IconData icon,
     required List<_EventItem> items,
     required String emptyText,
@@ -184,185 +256,195 @@ class _EventPageState extends State<EventPage> {
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: accent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Y2K.ink, width: 1.5),
               ),
               child: Text(
-                '${items.length}',
+                indexLabel,
                 style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w800,
                   fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
+                  color: iconColor,
+                  letterSpacing: 1,
                 ),
               ),
             ),
-            const Spacer(),
-            if (onClear != null)
-              TextButton.icon(
-                onPressed: onClear,
-                icon: const Icon(Icons.delete_outline, size: 16),
-                label: const Text('清空', style: TextStyle(fontSize: 13)),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.red.shade400,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
+            const SizedBox(width: 10),
+            Icon(icon, size: 18, color: Y2K.ink),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Y2K.ink),
+                  ),
+                  Text(subtitle,
+                      style: Y2K.monoSm.copyWith(color: Y2K.muted)),
+                ],
               ),
+            ),
+            Y2KTag(label: '${items.length}', background: Y2K.card),
+            if (onClear != null) ...[
+              const SizedBox(width: 8),
+              Y2KChip(
+                label: '清空',
+                icon: Icons.delete_outline_rounded,
+                background: Y2K.pink,
+                foreground: Colors.white,
+                onTap: onClear,
+              ),
+            ],
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         if (items.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              emptyText,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-            ),
-          )
+          _buildEmpty(emptyText)
         else
-          ...items.map((item) => _buildItemCard(item, colorScheme)),
+          ...items.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildItemCard(item),
+              )),
       ],
     );
   }
 
-  Widget _buildItemCard(_EventItem item, ColorScheme colorScheme) {
-    final basicInfo = item.profile.basicInfo;
+  Widget _buildEmpty(String text) {
+    return Y2KCard(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Y2K.gold,
+              shape: BoxShape.circle,
+              border: Border.all(color: Y2K.ink, width: 1.5),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.inbox_rounded,
+                size: 22, color: Y2K.ink),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                  fontSize: 14,
+                  color: Y2K.ink2,
+                  fontStyle: FontStyle.italic),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _goToDetail(item),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+  Widget _buildItemCard(_EventItem item) {
+    final basicInfo = item.profile.basicInfo;
+    final isPassed = item.profile.passingScore != null &&
+        item.totalScore >= item.profile.passingScore!;
+
+    return Y2KCard(
+      onTap: () => _goToDetail(item),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: isPassed ? Y2K.lime : Y2K.blue,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Y2K.ink, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.person_outline,
+                  color: isPassed ? Y2K.ink : Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('UID',
+                        style: Y2K.monoSm.copyWith(color: Y2K.muted)),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.uid,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Y2K.ink,
+                        fontFamily: 'monospace',
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isPassed)
+                const Y2KTag(label: 'PASSED', background: Y2K.lime),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Y2KDashedDivider(),
+          const SizedBox(height: 12),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 头部：图标 + UID
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.person_outline, color: colorScheme.primary, size: 24),
+              const Icon(Icons.info_outline, size: 14, color: Y2K.muted),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  basicInfo.isNotEmpty ? basicInfo : '未填写基础信息',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: basicInfo.isNotEmpty ? Y2K.ink2 : Y2K.muted,
+                    fontStyle: basicInfo.isNotEmpty
+                        ? FontStyle.normal
+                        : FontStyle.italic,
+                    height: 1.4,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'UID',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item.uid,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              // 基础信息 + 分数
-              Row(
-                children: [
-                  Icon(Icons.info_outline, size: 14, color: Colors.grey.shade500),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      basicInfo.isNotEmpty ? basicInfo : '未填写基础信息',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: basicInfo.isNotEmpty
-                            ? Colors.grey.shade600
-                            : Colors.grey.shade400,
-                        fontStyle: basicInfo.isNotEmpty
-                            ? FontStyle.normal
-                            : FontStyle.italic,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (item.profile.passingScore != null &&
-                      item.totalScore >= item.profile.passingScore!)
-                    Container(
-                      margin: const EdgeInsets.only(right: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.shade300),
-                      ),
-                      child: Text(
-                        '合格',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                    ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${item.totalScore} 分',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
-                ],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Y2KTag(
+                label: '${item.totalScore} 分',
+                background: Y2K.pink,
+                foreground: Colors.white,
+              ),
+              const Spacer(),
+              const Icon(Icons.arrow_forward_rounded,
+                  size: 18, color: Y2K.ink),
+            ],
+          ),
+        ],
       ),
     );
   }

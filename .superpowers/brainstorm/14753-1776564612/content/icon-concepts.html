@@ -1,0 +1,258 @@
+<h2>Y2K 图标概念方向</h2>
+<p class="subtitle">为「性格匹配测试」选择一个视觉方向 — 点击选择你喜欢的</p>
+
+<style>
+  .icon-grid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 32px 0;
+  }
+  .icon-card {
+    background: #fff;
+    border: 2.5px solid #0E0E12;
+    border-radius: 20px;
+    padding: 28px 24px 20px;
+    width: 220px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 #0E0E12;
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-align: center;
+  }
+  .icon-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 #0E0E12;
+  }
+  .icon-card.selected {
+    outline: 3px solid #FF5EA8;
+    outline-offset: 2px;
+  }
+  .icon-preview {
+    width: 108px;
+    height: 108px;
+    margin: 0 auto 16px;
+    border-radius: 24px;
+    border: 2px solid #0E0E12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .icon-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: #0E0E12;
+  }
+  .icon-card p {
+    font-size: 12px;
+    color: #7A7A85;
+    margin: 0;
+    line-height: 1.5;
+  }
+  .tag {
+    display: inline-block;
+    background: #C6FF3D;
+    border: 1.5px solid #0E0E12;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    margin-top: 10px;
+    color: #0E0E12;
+  }
+  .tag.pink { background: #FF5EA8; color: #fff; }
+  .tag.blue { background: #3D6BFF; color: #fff; }
+
+  /* Icon A: Heart Duality */
+  .icon-a {
+    background: linear-gradient(135deg, #FFF5E1 0%, #EDE4CE 100%);
+  }
+  .heart-duo {
+    position: relative;
+    width: 72px;
+    height: 64px;
+  }
+  .heart {
+    position: absolute;
+    width: 36px;
+    height: 32px;
+  }
+  .heart svg { width: 100%; height: 100%; }
+  .heart-left { left: 0; top: 4px; }
+  .heart-right { right: 0; top: 4px; }
+  .star-deco {
+    position: absolute;
+    font-size: 10px;
+  }
+  .star-deco.s1 { top: -4px; right: 10px; }
+  .star-deco.s2 { bottom: 0; left: 6px; font-size: 8px; }
+
+  /* Icon B: Circuit/Matrix */
+  .icon-b {
+    background: #0E0E12;
+  }
+  .circuit-wrap {
+    position: relative;
+    width: 72px;
+    height: 72px;
+  }
+  .node {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid;
+  }
+  .node-center {
+    width: 22px; height: 22px;
+    background: #C6FF3D;
+    border-color: #C6FF3D;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 8px #C6FF3D88;
+  }
+  .node-sm {
+    width: 10px; height: 10px;
+    background: #FF5EA8;
+    border-color: #FF5EA8;
+  }
+  .node-sm.n1 { top: 4px; left: 50%; transform: translateX(-50%); }
+  .node-sm.n2 { bottom: 4px; left: 50%; transform: translateX(-50%); }
+  .node-sm.n3 { left: 4px; top: 50%; transform: translateY(-50%); }
+  .node-sm.n4 { right: 4px; top: 50%; transform: translateY(-50%); }
+  .node-sm.n5 { top: 10px; left: 10px; background: #3D6BFF; border-color: #3D6BFF; }
+  .node-sm.n6 { bottom: 10px; right: 10px; background: #FFB800; border-color: #FFB800; }
+  .circuit-line {
+    position: absolute;
+    background: #C6FF3D44;
+    top: 50%; left: 50%; transform-origin: 0 0;
+  }
+  .cl1 { width: 1.5px; height: 20px; transform: translate(-50%, -100%) rotate(0deg); }
+  .cl2 { width: 1.5px; height: 20px; transform: translate(-50%, 0%) rotate(0deg); }
+  .cl3 { width: 20px; height: 1.5px; transform: translate(-100%, -50%) rotate(0deg); }
+  .cl4 { width: 20px; height: 1.5px; transform: translate(0%, -50%) rotate(0deg); }
+
+  /* Icon C: Face Match */
+  .icon-c {
+    background: linear-gradient(160deg, #FF5EA8 0%, #3D6BFF 100%);
+  }
+  .face-wrap {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .face {
+    width: 28px;
+    height: 32px;
+    background: #FFF5E1;
+    border: 2px solid #0E0E12;
+    border-radius: 50% 50% 45% 45%;
+    position: relative;
+    box-shadow: 2px 2px 0 #0E0E12;
+  }
+  .face-eye {
+    position: absolute;
+    width: 5px; height: 5px;
+    background: #0E0E12;
+    border-radius: 50%;
+    top: 9px;
+  }
+  .eye-l { left: 5px; }
+  .eye-r { right: 5px; }
+  .face-smile {
+    position: absolute;
+    bottom: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 12px; height: 6px;
+    border-bottom: 2px solid #0E0E12;
+    border-radius: 0 0 6px 6px;
+  }
+  .match-symbol {
+    font-size: 16px;
+    font-weight: 900;
+    color: #FFF5E1;
+    text-shadow: 1px 1px 0 #0E0E12;
+  }
+  .sparkle-ring {
+    position: absolute;
+    width: 88px; height: 88px;
+    border: 1.5px dashed rgba(255,255,255,0.4);
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+</style>
+
+<div class="icon-grid">
+  <!-- Option A: Heart Duality -->
+  <div class="icon-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="icon-preview icon-a">
+      <div class="heart-duo">
+        <div class="heart heart-left">
+          <svg viewBox="0 0 36 32" fill="none">
+            <path d="M18 28 C18 28 2 18 2 9 C2 4.5 6 2 10 2 C13 2 16 4 18 7 C20 4 23 2 26 2 C30 2 34 4.5 34 9 C34 18 18 28 18 28Z" fill="#FF5EA8" stroke="#0E0E12" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="heart heart-right" style="right:0;top:12px;">
+          <svg viewBox="0 0 36 32" fill="none">
+            <path d="M18 28 C18 28 2 18 2 9 C2 4.5 6 2 10 2 C13 2 16 4 18 7 C20 4 23 2 26 2 C30 2 34 4.5 34 9 C34 18 18 28 18 28Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2"/>
+          </svg>
+        </div>
+        <span class="star-deco s1">✦</span>
+        <span class="star-deco s2">✧</span>
+      </div>
+    </div>
+    <h3>心型契合</h3>
+    <p>双心交叠象征匹配，粉色×荧光绿Y2K撞色</p>
+    <span class="tag">浪漫感</span>
+  </div>
+
+  <!-- Option B: Circuit Node -->
+  <div class="icon-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="icon-preview icon-b">
+      <div class="circuit-wrap">
+        <div class="circuit-line cl1"></div>
+        <div class="circuit-line cl2"></div>
+        <div class="circuit-line cl3"></div>
+        <div class="circuit-line cl4"></div>
+        <div class="node node-sm n1"></div>
+        <div class="node node-sm n2"></div>
+        <div class="node node-sm n3"></div>
+        <div class="node node-sm n4"></div>
+        <div class="node node-sm n5"></div>
+        <div class="node node-sm n6"></div>
+        <div class="node node-center"></div>
+      </div>
+    </div>
+    <h3>神经网络</h3>
+    <p>黑底+荧光节点，赛博Y2K电路美学</p>
+    <span class="tag blue">科技感</span>
+  </div>
+
+  <!-- Option C: Face Match -->
+  <div class="icon-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="icon-preview icon-c">
+      <div class="sparkle-ring"></div>
+      <div class="face-wrap">
+        <div class="face">
+          <div class="face-eye eye-l"></div>
+          <div class="face-eye eye-r"></div>
+          <div class="face-smile"></div>
+        </div>
+        <span class="match-symbol">≈</span>
+        <div class="face">
+          <div class="face-eye eye-l"></div>
+          <div class="face-eye eye-r"></div>
+          <div class="face-smile"></div>
+        </div>
+      </div>
+    </div>
+    <h3>人物配对</h3>
+    <p>双人简笔像素脸，渐变粉蓝Y2K渐变底</p>
+    <span class="tag pink">可爱感</span>
+  </div>
+</div>
+
+<p class="subtitle" style="text-align:center;margin-top:8px">点击选择你最喜欢的方向 → 接下来我们细化配色与细节</p>

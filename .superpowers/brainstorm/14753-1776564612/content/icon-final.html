@@ -1,0 +1,204 @@
+<h2>最终图标方案</h2>
+<p class="subtitle">热粉底 × Neo-Y2K扁平双心 — 选择构图版本</p>
+
+<style>
+  .icon-grid {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 32px 0;
+  }
+  .icon-card {
+    background: #fff;
+    border: 2.5px solid #0E0E12;
+    border-radius: 20px;
+    padding: 28px 28px 20px;
+    width: 240px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 #0E0E12;
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-align: center;
+  }
+  .icon-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #0E0E12; }
+
+  /* Icon canvas */
+  .icon-canvas {
+    width: 120px;
+    height: 120px;
+    background: #FF5EA8;
+    border-radius: 28px;
+    border: 2.5px solid #0E0E12;
+    box-shadow: 4px 4px 0 #0E0E12;
+    margin: 0 auto 18px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-card h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px; color: #0E0E12; }
+  .icon-card p { font-size: 12px; color: #7A7A85; line-height: 1.5; margin: 0; }
+  .kw { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 20px; margin-top: 10px; border: 1.5px solid #0E0E12; }
+
+  /* Shared deco text */
+  .deco { position: absolute; font-weight: 900; line-height: 1; pointer-events: none; }
+
+  /* --- Version A: Offset Overlap --- */
+  .va-wrap { position: relative; width: 86px; height: 76px; }
+  .va-h { position: absolute; }
+  .va-h svg { display: block; }
+
+  /* --- Version B: Centered Stack + Badge --- */
+  .vb-wrap { position: relative; width: 90px; height: 80px; }
+  .vb-badge {
+    position: absolute;
+    bottom: -8px; right: -8px;
+    width: 28px; height: 28px;
+    background: #C6FF3D;
+    border: 2px solid #0E0E12;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900; color: #0E0E12;
+    box-shadow: 2px 2px 0 #0E0E12;
+    z-index: 10;
+  }
+
+  /* Sizes on canvas */
+  .preview-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #7A7A85;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* Small size previews */
+  .size-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: flex-end;
+    margin-top: 14px;
+  }
+  .size-preview {
+    background: #FF5EA8;
+    border: 1.5px solid #0E0E12;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .sp-label { font-size: 9px; color: #7A7A85; text-align: center; margin-top: 3px; }
+</style>
+
+<div class="icon-grid">
+
+  <!-- Version A: Classic Offset -->
+  <div class="icon-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="icon-canvas">
+      <!-- deco dots corners -->
+      <span class="deco" style="top:8px;left:9px;font-size:9px;color:#0E0E12;opacity:0.5">✦</span>
+      <span class="deco" style="bottom:9px;right:10px;font-size:7px;color:#0E0E12;opacity:0.4">✧</span>
+      <span class="deco" style="top:10px;right:10px;font-size:6px;color:#0E0E12;opacity:0.35">+</span>
+
+      <div class="va-wrap">
+        <!-- Back heart: Lime (offset right-down) -->
+        <div class="va-h" style="left:22px;top:14px;width:56px;height:48px;">
+          <svg viewBox="0 0 56 48" fill="none">
+            <path d="M28 44C28 44 2 28 2 13C2 7 7 2 14 2C19 2 24 5 28 10C32 5 37 2 42 2C49 2 54 7 54 13C54 28 28 44 28 44Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2.5"/>
+            <path d="M13 10C11 13 10.5 17 11.5 20" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+          </svg>
+        </div>
+        <!-- Front heart: White/cream -->
+        <div class="va-h" style="left:0;top:0;width:56px;height:48px;">
+          <svg viewBox="0 0 56 48" fill="none">
+            <path d="M28 44C28 44 2 28 2 13C2 7 7 2 14 2C19 2 24 5 28 10C32 5 37 2 42 2C49 2 54 7 54 13C54 28 28 44 28 44Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="2.5"/>
+            <path d="M13 10C11 13 10.5 17 11.5 20" stroke="#FF5EA8" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <h3>错位叠层</h3>
+    <p>奶油白心在前、荧光绿心在后错位偏移<br>粉底托底，层次感强</p>
+    <span class="kw" style="background:#FFF5E1">经典构图</span>
+
+    <!-- Small size previews -->
+    <div class="size-row">
+      <div>
+        <div class="size-preview" style="width:48px;height:48px;border-radius:11px;">
+          <svg width="32" height="28" viewBox="0 0 56 48" fill="none" style="position:absolute;left:16px;top:8px"><path d="M28 44C28 44 2 28 2 13C2 7 7 2 14 2C19 2 24 5 28 10C32 5 37 2 42 2C49 2 54 7 54 13C54 28 28 44 28 44Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2.5"/></svg>
+          <svg width="32" height="28" viewBox="0 0 56 48" fill="none" style="position:absolute;left:8px;top:4px"><path d="M28 44C28 44 2 28 2 13C2 7 7 2 14 2C19 2 24 5 28 10C32 5 37 2 42 2C49 2 54 7 54 13C54 28 28 44 28 44Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="2.5"/></svg>
+        </div>
+        <div class="sp-label">48px</div>
+      </div>
+      <div>
+        <div class="size-preview" style="width:29px;height:29px;border-radius:7px;">
+          <svg width="20" height="17" viewBox="0 0 56 48" fill="none" style="position:absolute;left:9px;top:5px"><path d="M28 44C28 44 2 28 2 13C2 7 7 2 14 2C19 2 24 5 28 10C32 5 37 2 42 2C49 2 54 7 54 13C54 28 28 44 28 44Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="3"/></svg>
+          <svg width="20" height="17" viewBox="0 0 56 48" fill="none" style="position:absolute;left:5px;top:2px"><path d="M28 44C28 44 2 28 2 13C2 7 7 2 14 2C19 2 24 5 28 10C32 5 37 2 42 2C49 2 54 7 54 13C54 28 28 44 28 44Z" fill="#FFF5E1" stroke="#0E0E12" stroke-width="3"/></svg>
+        </div>
+        <div class="sp-label">29px</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Version B: Mirrored + Star Badge -->
+  <div class="icon-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="icon-canvas">
+      <span class="deco" style="top:7px;left:8px;font-size:10px;color:#0E0E12;opacity:0.5">★</span>
+      <span class="deco" style="top:8px;right:9px;font-size:7px;color:#0E0E12;opacity:0.4">✦</span>
+      <span class="deco" style="bottom:8px;left:9px;font-size:7px;color:#0E0E12;opacity:0.35">✧</span>
+
+      <div class="vb-wrap">
+        <!-- Left heart: Pink (slightly inward facing = mirrored) -->
+        <div style="position:absolute;left:0;top:10px;width:52px;height:44px;">
+          <svg viewBox="0 0 52 44" fill="none">
+            <path d="M26 40C26 40 2 26 2 12C2 6.5 6.5 2 13 2C17.5 2 21.5 4.5 26 9C30.5 4.5 34.5 2 39 2C45.5 2 50 6.5 50 12C50 26 26 40 26 40Z" fill="#FF5EA8" stroke="#0E0E12" stroke-width="2.5"/>
+            <path d="M12 9C10 12 9.5 16 10.5 19" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+          </svg>
+        </div>
+        <!-- Right heart: Lime (mirrored horizontally) -->
+        <div style="position:absolute;right:0;top:10px;width:52px;height:44px;transform:scaleX(-1)">
+          <svg viewBox="0 0 52 44" fill="none">
+            <path d="M26 40C26 40 2 26 2 12C2 6.5 6.5 2 13 2C17.5 2 21.5 4.5 26 9C30.5 4.5 34.5 2 39 2C45.5 2 50 6.5 50 12C50 26 26 40 26 40Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2.5"/>
+            <path d="M12 9C10 12 9.5 16 10.5 19" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+          </svg>
+        </div>
+        <!-- Star badge -->
+        <div class="vb-badge">★</div>
+      </div>
+    </div>
+
+    <h3>镜像对称 + 徽章</h3>
+    <p>粉心×绿心左右对称镜像<br>右下角金色星形徽章点睛</p>
+    <span class="kw" style="background:#FFB800">活泼构图</span>
+
+    <!-- Small size previews -->
+    <div class="size-row">
+      <div>
+        <div class="size-preview" style="width:48px;height:48px;border-radius:11px;">
+          <svg width="26" height="22" viewBox="0 0 52 44" fill="none" style="position:absolute;left:2px;top:8px"><path d="M26 40C26 40 2 26 2 12C2 6.5 6.5 2 13 2C17.5 2 21.5 4.5 26 9C30.5 4.5 34.5 2 39 2C45.5 2 50 6.5 50 12C50 26 26 40 26 40Z" fill="#FF5EA8" stroke="#0E0E12" stroke-width="2.5"/></svg>
+          <svg width="26" height="22" viewBox="0 0 52 44" fill="none" style="position:absolute;right:2px;top:8px;transform:scaleX(-1)"><path d="M26 40C26 40 2 26 2 12C2 6.5 6.5 2 13 2C17.5 2 21.5 4.5 26 9C30.5 4.5 34.5 2 39 2C45.5 2 50 6.5 50 12C50 26 26 40 26 40Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2.5"/></svg>
+          <div style="position:absolute;bottom:3px;right:3px;width:12px;height:12px;background:#FFB800;border:1.5px solid #0E0E12;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#0E0E12">★</div>
+        </div>
+        <div class="sp-label">48px</div>
+      </div>
+      <div>
+        <div class="size-preview" style="width:29px;height:29px;border-radius:7px;">
+          <svg width="16" height="13" viewBox="0 0 52 44" fill="none" style="position:absolute;left:1px;top:6px"><path d="M26 40C26 40 2 26 2 12C2 6.5 6.5 2 13 2C17.5 2 21.5 4.5 26 9C30.5 4.5 34.5 2 39 2C45.5 2 50 6.5 50 12C50 26 26 40 26 40Z" fill="#FF5EA8" stroke="#0E0E12" stroke-width="3"/></svg>
+          <svg width="16" height="13" viewBox="0 0 52 44" fill="none" style="position:absolute;right:1px;top:6px;transform:scaleX(-1)"><path d="M26 40C26 40 2 26 2 12C2 6.5 6.5 2 13 2C17.5 2 21.5 4.5 26 9C30.5 4.5 34.5 2 39 2C45.5 2 50 6.5 50 12C50 26 26 40 26 40Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="3"/></svg>
+        </div>
+        <div class="sp-label">29px</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="text-align:center">两版都使用热粉底 #FF5EA8 + Neo-Y2K扁平风格<br>确认后我将输出完整设计规格文档</p>

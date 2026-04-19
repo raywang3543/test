@@ -1,0 +1,194 @@
+<h2>Y2K 质感风格</h2>
+<p class="subtitle">同样的双心图案 — 哪种质感最对味？</p>
+
+<style>
+  .icon-grid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 32px 0;
+  }
+  .icon-card {
+    background: #fff;
+    border: 2.5px solid #0E0E12;
+    border-radius: 20px;
+    padding: 28px 24px 20px;
+    width: 200px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 #0E0E12;
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-align: center;
+  }
+  .icon-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #0E0E12; }
+  .icon-preview {
+    width: 108px;
+    height: 108px;
+    margin: 0 auto 16px;
+    border-radius: 24px;
+    border: 2.5px solid #0E0E12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .icon-card h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px; color: #0E0E12; }
+  .icon-card p { font-size: 12px; color: #7A7A85; margin: 0; line-height: 1.5; }
+  .kw { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 20px; margin-top: 10px; border: 1.5px solid #0E0E12; }
+
+  /* ---- Style A: Neo-Y2K Flat ---- */
+  .s-flat { background: #FFF5E1; }
+  .flat-hearts { position: relative; width: 80px; height: 72px; }
+  .flat-h {
+    position: absolute;
+    width: 52px; height: 46px;
+  }
+  .flat-h svg { width: 100%; height: 100%; }
+  .flat-h1 { left: 0; top: 8px; }
+  .flat-h2 { right: 0; top: 0; }
+  .flat-star { position: absolute; font-size: 11px; color: #0E0E12; font-weight: 900; }
+  .fs1 { top: -2px; right: 8px; }
+  .fs2 { bottom: 4px; left: 2px; font-size: 8px; }
+  .fs3 { top: 16px; right: -2px; font-size: 8px; }
+
+  /* ---- Style B: Chrome Gloss ---- */
+  .s-chrome { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+  .chrome-hearts { position: relative; width: 80px; height: 72px; }
+  .chrome-h { position: absolute; width: 52px; height: 46px; }
+  .chrome-h svg { width: 100%; height: 100%; filter: drop-shadow(0 0 6px rgba(255,94,168,0.7)); }
+  .chrome-h1 { left: 0; top: 8px; }
+  .chrome-h2 { right: 0; top: 0; }
+  .glow-dot { position: absolute; border-radius: 50%; }
+  .gd1 { width:6px; height:6px; background:#C6FF3D; box-shadow: 0 0 8px #C6FF3D; top:-4px; right:12px; }
+  .gd2 { width:4px; height:4px; background:#FFB800; box-shadow: 0 0 6px #FFB800; bottom:2px; left:4px; }
+  .gd3 { width:3px; height:3px; background:#fff; box-shadow: 0 0 4px #fff; top:20px; right:0; }
+
+  /* ---- Style C: Pixel Sticker ---- */
+  .s-pixel { background: #3D6BFF; }
+  .pixel-wrap { position: relative; }
+  .pixel-h { image-rendering: pixelated; position: relative; }
+  .px-heart {
+    display: grid;
+    grid-template-columns: repeat(9, 6px);
+    grid-template-rows: repeat(8, 6px);
+    gap: 0;
+  }
+  .px { width: 6px; height: 6px; }
+  .px.f { background: #FF5EA8; }
+  .px.g { background: #C6FF3D; }
+  .px.d { background: #0E0E12; }
+  .px.w { background: #FFF5E1; }
+  .px.t { background: transparent; }
+  .px-star { color: #FFB800; font-size: 14px; position: absolute; font-weight: 900; }
+  .pxs1 { top: -8px; right: 0; }
+  .pxs2 { bottom: -4px; left: -4px; font-size: 10px; color: #C6FF3D; }
+</style>
+
+<div class="icon-grid">
+
+  <!-- A: Neo-Y2K Flat -->
+  <div class="icon-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="icon-preview s-flat">
+      <div class="flat-hearts">
+        <div class="flat-h flat-h1">
+          <svg viewBox="0 0 52 46" fill="none">
+            <path d="M26 42 C26 42 2 26 2 12 C2 6 7 2 13 2 C18 2 22 5 26 10 C30 5 34 2 39 2 C45 2 50 6 50 12 C50 26 26 42 26 42Z" fill="#FF5EA8" stroke="#0E0E12" stroke-width="2.5"/>
+            <path d="M14 10 C12 12 11 15 12 18" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="flat-h flat-h2">
+          <svg viewBox="0 0 52 46" fill="none">
+            <path d="M26 42 C26 42 2 26 2 12 C2 6 7 2 13 2 C18 2 22 5 26 10 C30 5 34 2 39 2 C45 2 50 6 50 12 C50 26 26 42 26 42Z" fill="#C6FF3D" stroke="#0E0E12" stroke-width="2.5"/>
+            <path d="M14 10 C12 12 11 15 12 18" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </div>
+        <span class="flat-star fs1">✦</span>
+        <span class="flat-star fs2">✧</span>
+        <span class="flat-star fs3">+</span>
+      </div>
+    </div>
+    <h3>Neo-Y2K 扁平</h3>
+    <p>硬边描边＋实色填充，与应用现有风格完全统一</p>
+    <span class="kw" style="background:#C6FF3D">一致性强</span>
+  </div>
+
+  <!-- B: Chrome Glow -->
+  <div class="icon-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="icon-preview s-chrome">
+      <div class="chrome-hearts">
+        <div class="chrome-h chrome-h1">
+          <svg viewBox="0 0 52 46" fill="none">
+            <defs>
+              <linearGradient id="cg1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FF9ED6"/>
+                <stop offset="40%" stop-color="#FF5EA8"/>
+                <stop offset="100%" stop-color="#C0005A"/>
+              </linearGradient>
+            </defs>
+            <path d="M26 42 C26 42 2 26 2 12 C2 6 7 2 13 2 C18 2 22 5 26 10 C30 5 34 2 39 2 C45 2 50 6 50 12 C50 26 26 42 26 42Z" fill="url(#cg1)" stroke="#FF9ED6" stroke-width="1.5"/>
+            <path d="M13 9 C11 12 10 16 11 19" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="chrome-h chrome-h2">
+          <svg viewBox="0 0 52 46" fill="none">
+            <defs>
+              <linearGradient id="cg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#EEFF99"/>
+                <stop offset="40%" stop-color="#C6FF3D"/>
+                <stop offset="100%" stop-color="#78B800"/>
+              </linearGradient>
+            </defs>
+            <path d="M26 42 C26 42 2 26 2 12 C2 6 7 2 13 2 C18 2 22 5 26 10 C30 5 34 2 39 2 C45 2 50 6 50 12 C50 26 26 42 26 42Z" fill="url(#cg2)" stroke="#EEFF99" stroke-width="1.5"/>
+            <path d="M13 9 C11 12 10 16 11 19" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="glow-dot gd1"></div>
+        <div class="glow-dot gd2"></div>
+        <div class="glow-dot gd3"></div>
+      </div>
+    </div>
+    <h3>镭射光泽</h3>
+    <p>深色底＋渐变高光，经典2000年代镀铬质感</p>
+    <span class="kw" style="background:#FF5EA8;color:#fff">复古感强</span>
+  </div>
+
+  <!-- C: Pixel Sticker -->
+  <div class="icon-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="icon-preview s-pixel">
+      <div class="pixel-wrap">
+        <span class="px-star pxs1">★</span>
+        <svg width="72" height="64" viewBox="0 0 72 64" style="image-rendering:pixelated">
+          <!-- Pink heart (left, slight offset) -->
+          <rect x="6" y="6" width="6" height="6" fill="#FF5EA8"/>
+          <rect x="18" y="6" width="6" height="6" fill="#FF5EA8"/>
+          <rect x="0" y="12" width="30" height="6" fill="#FF5EA8"/>
+          <rect x="0" y="18" width="30" height="6" fill="#FF5EA8"/>
+          <rect x="0" y="24" width="30" height="6" fill="#FF5EA8"/>
+          <rect x="6" y="30" width="18" height="6" fill="#FF5EA8"/>
+          <rect x="12" y="36" width="6" height="6" fill="#FF5EA8"/>
+          <!-- dark outline -->
+          <rect x="6" y="6" width="6" height="6" fill="none" stroke="#0E0E12" stroke-width="1"/>
+          <!-- Lime heart (right, offset) -->
+          <rect x="30" y="12" width="6" height="6" fill="#C6FF3D"/>
+          <rect x="42" y="12" width="6" height="6" fill="#C6FF3D"/>
+          <rect x="24" y="18" width="30" height="6" fill="#C6FF3D"/>
+          <rect x="24" y="24" width="30" height="6" fill="#C6FF3D"/>
+          <rect x="24" y="30" width="30" height="6" fill="#C6FF3D"/>
+          <rect x="30" y="36" width="18" height="6" fill="#C6FF3D"/>
+          <rect x="36" y="42" width="6" height="6" fill="#C6FF3D"/>
+          <!-- star pixels -->
+          <rect x="54" y="0" width="6" height="6" fill="#FFB800"/>
+          <rect x="0" y="48" width="6" height="6" fill="#fff"/>
+        </svg>
+        <span class="px-star pxs2">✦</span>
+      </div>
+    </div>
+    <h3>像素贴纸</h3>
+    <p>8-bit像素心形＋蓝底，游戏卡带×Y2K贴纸风</p>
+    <span class="kw" style="background:#FFB800">趣味感强</span>
+  </div>
+
+</div>
+
+<p class="subtitle" style="text-align:center">点击选择质感方向，或告诉我你想要的感觉</p>

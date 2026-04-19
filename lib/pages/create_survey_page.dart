@@ -4,12 +4,13 @@ import '../models/survey_model.dart';
 import '../services/kimi_service.dart';
 import '../services/survey_storage.dart';
 import '../services/user_storage.dart';
+import '../theme/y2k_theme.dart';
+import '../theme/y2k_widgets.dart';
 
 class _OptionData {
   final TextEditingController contentController;
 
-  _OptionData()
-      : contentController = TextEditingController();
+  _OptionData() : contentController = TextEditingController();
 
   void dispose() {
     contentController.dispose();
@@ -21,7 +22,6 @@ class _QuestionData {
   final TextEditingController scoreController;
   bool isMultiChoice;
   final List<_OptionData> options;
-  /// 标准答案：单选为 int?（选项下标），多选为 Set&lt;int&gt;
   dynamic correctAnswer;
 
   _QuestionData()
@@ -73,17 +73,19 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
           maxLines: 3,
           decoration: const InputDecoration(
             hintText: '可输入主题或要求，例如：围绕旅行偏好出题（可留空）',
-            border: OutlineInputBorder(),
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         actions: [
-          TextButton(
+          Y2KButton(
+            label: '取消',
+            kind: Y2KButtonKind.ghost,
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
           ),
-          FilledButton(
+          Y2KButton(
+            label: '开始生成',
+            kind: Y2KButtonKind.primary,
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('确定'),
           ),
         ],
       ),
@@ -129,10 +131,7 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('生成失败：$e'),
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text('生成失败：$e')),
         );
       }
     } finally {
@@ -144,7 +143,6 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
     setState(() {
       _questions.add(_QuestionData());
     });
-    // 滚动到底部
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
@@ -180,17 +178,15 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
       final question = _questions[questionIndex];
       question.options[optionIndex].dispose();
       question.options.removeAt(optionIndex);
-      
-      // 如果删除的是已选中的标准答案，需要更新 correctAnswer
+
       if (!question.isMultiChoice) {
         if (question.correctAnswer == optionIndex) {
           question.correctAnswer = null;
-        } else if (question.correctAnswer != null && 
-                   question.correctAnswer > optionIndex) {
+        } else if (question.correctAnswer != null &&
+            question.correctAnswer > optionIndex) {
           question.correctAnswer = (question.correctAnswer as int) - 1;
         }
       } else {
-        // 多选题：删除对应选项，调整索引
         final newSet = <int>{};
         for (final idx in (question.correctAnswer as Set<int>? ?? {})) {
           if (idx < optionIndex) {
@@ -206,18 +202,16 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(message)),
     );
   }
 
-  /// 设置单选题标准答案
   void _setSingleCorrectAnswer(int qIndex, int oIndex) {
     setState(() {
       _questions[qIndex].correctAnswer = oIndex;
     });
   }
 
-  /// 切换多选题标准答案
   void _toggleMultiCorrectAnswer(int qIndex, int oIndex) {
     setState(() {
       final question = _questions[qIndex];
@@ -232,20 +226,15 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
     });
   }
 
-  /// 获取标准答案的显示文本
   String _getCorrectAnswerText(_QuestionData question) {
-    if (question.correctAnswer == null) {
-      return '未设置';
-    }
+    if (question.correctAnswer == null) return '未设置';
     if (!question.isMultiChoice) {
-      // 单选题
       final idx = question.correctAnswer as int;
       if (idx >= 0 && idx < question.options.length) {
         return String.fromCharCode(65 + idx);
       }
       return '无效';
     } else {
-      // 多选题
       final set = question.correctAnswer as Set<int>;
       if (set.isEmpty) return '未设置';
       final labels = set.toList()..sort();
@@ -260,7 +249,6 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
         _showSnackBar('第 ${i + 1} 题的题目不能为空');
         return false;
       }
-      // 验证本题分数
       final scoreText = q.scoreController.text.trim();
       if (scoreText.isEmpty) {
         _showSnackBar('请设置第 ${i + 1} 题的分值');
@@ -277,7 +265,6 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
           return false;
         }
       }
-      // 检查是否设置了标准答案
       if (q.correctAnswer == null) {
         _showSnackBar('请为第 ${i + 1} 题设置我的答案');
         return false;
@@ -293,10 +280,12 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
         builder: (ctx) => AlertDialog(
           title: const Text('题目生成中'),
           content: const Text('题目正在自动生成，生成完成后才能提交测试。'),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           actions: [
-            TextButton(
+            Y2KButton(
+              label: '知道了',
+              kind: Y2KButtonKind.primary,
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('知道了'),
             ),
           ],
         ),
@@ -305,22 +294,18 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
     }
     if (!_validate()) return;
 
-    // 获取当前用户的 UID 和基础信息
     final uid = await UserStorage.getOrCreateUid();
     final userProfile = await UserStorage.load();
     final creatorBasicInfo = userProfile?.basicInfo ?? '';
-    
-    // 调试输出
+
     debugPrint('创建测试 - UID: $uid');
     debugPrint('创建测试 - 基础信息: "$creatorBasicInfo"');
-    debugPrint('创建测试 - userProfile: $userProfile');
 
     final survey = Survey(
       uid: uid,
       createdAt: DateTime.now(),
       creatorBasicInfo: creatorBasicInfo,
       questions: _questions.map((q) {
-        // 转换标准答案格式
         dynamic correctAnswer;
         if (!q.isMultiChoice) {
           correctAnswer = q.correctAnswer;
@@ -336,7 +321,7 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
           options: q.options.map((o) {
             return SurveyOption(
               content: o.contentController.text.trim(),
-              score: 0, // 选项分数由Kimi根据匹配度计算
+              score: 0,
             );
           }).toList(),
         );
@@ -351,311 +336,291 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text('新建测试'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: _isGenerating
-            ? const Padding(
-                padding: EdgeInsets.all(14),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
+    return Y2KScaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopBar(),
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                itemCount: _questions.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == _questions.length) return _buildAddQuestionButton();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 22),
+                    child: _buildQuestionCard(index),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        children: [
+          Y2KChip(
+            label: '← 返回',
+            background: Colors.transparent,
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('CREATE · 出题', style: Y2K.monoSm.copyWith(color: Y2K.muted)),
+                const Text(
+                  '新建测试',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5, color: Y2K.ink),
                 ),
-              )
-            : IconButton(
-                onPressed: _showGenerateDialog,
-                icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
-                tooltip: '自动生成题目',
-              ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilledButton.icon(
-              onPressed: _startSurvey,
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: colorScheme.primary,
-              ),
-              icon: const Icon(Icons.check_rounded, size: 18),
-              label: const Text('提交'),
+              ],
             ),
           ),
+          _isGenerating
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.4, color: Y2K.ink),
+                )
+              : Y2KButton(
+                  label: 'AI 生成',
+                  icon: Icons.auto_awesome_rounded,
+                  kind: Y2KButtonKind.accent,
+                  onPressed: _showGenerateDialog,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  fontSize: 13,
+                ),
         ],
       ),
-      body: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-        itemCount: _questions.length,
-        itemBuilder: (context, index) => _buildQuestionCard(index),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+      decoration: const BoxDecoration(
+        color: Y2K.bg,
+        border: Border(top: BorderSide(color: Y2K.ink, width: 1.5)),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      child: SafeArea(
+        top: false,
+        child: Y2KButton(
+          label: '保存并发布 →',
+          icon: Icons.check_rounded,
+          kind: Y2KButtonKind.primary,
+          block: true,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          fontSize: 16,
+          onPressed: _startSurvey,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddQuestionButton() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Y2KButton(
+        label: '+ 添加问题',
+        kind: Y2KButtonKind.ghost,
+        block: true,
+        padding: const EdgeInsets.symmetric(vertical: 14),
         onPressed: _addQuestion,
-        icon: const Icon(Icons.add),
-        label: const Text('添加问题'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: Colors.white,
       ),
     );
   }
 
   Widget _buildQuestionCard(int qIndex) {
     final question = _questions[qIndex];
-    final colorScheme = Theme.of(context).colorScheme;
     final hasCorrectAnswer = question.correctAnswer != null;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 题目头部
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '第 ${qIndex + 1} 题',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => _removeQuestion(qIndex),
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  tooltip: '删除此题',
-                  iconSize: 22,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // 本题分数输入（放在题目内容上方）
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.pink.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.pink.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.star_rounded,
-                          size: 18,
-                          color: Colors.pink.shade400,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('本题分值', style: TextStyle(fontSize: 14)),
-                        const Spacer(),
-                        SizedBox(
-                          width: 80,
-                          child: TextField(
-                            controller: question.scoreController,
-                            decoration: InputDecoration(
-                              hintText: '',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            textAlign: TextAlign.end,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.pink.shade600,
-                            ),
-                          ),
-                        ),
-                        Text(' 分', style: TextStyle(color: Colors.pink.shade400)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // 题目输入（放在分值下方）
-            TextField(
-              controller: question.titleController,
-              decoration: InputDecoration(
-                labelText: '题目内容',
-                hintText: '请输入题目...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-              maxLines: 2,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 12),
-
-            // 多选开关
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Y2KCard(
+          padding: const EdgeInsets.fromLTRB(18, 26, 18, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Icon(
-                    question.isMultiChoice ? Icons.check_box_outlined : Icons.radio_button_checked,
-                    size: 18,
-                    color: question.isMultiChoice ? colorScheme.primary : Colors.grey,
+                  Y2KTag(
+                    label: 'SCORE',
+                    background: Y2K.gold,
                   ),
                   const SizedBox(width: 8),
-                  const Text('允许多选', style: TextStyle(fontSize: 14)),
+                  SizedBox(
+                    width: 70,
+                    child: TextField(
+                      controller: question.scoreController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      textAlign: TextAlign.center,
+                      decoration: const InputDecoration(
+                        hintText: '10',
+                        contentPadding: EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Y2K.ink),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text('分', style: Y2K.monoSm),
                   const Spacer(),
-                  Switch(
-                    value: question.isMultiChoice,
-                    onChanged: (value) {
-                      setState(() {
-                        question.isMultiChoice = value;
-                        question.correctAnswer = value ? <int>{} : null;
-                      });
-                    },
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // 我的答案区域
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: hasCorrectAnswer 
-                    ? Colors.green.shade50 
-                    : Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: hasCorrectAnswer 
-                      ? Colors.green.shade200 
-                      : Colors.orange.shade200,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.key,
-                        size: 16,
-                        color: hasCorrectAnswer 
-                            ? Colors.green.shade700 
-                            : Colors.orange.shade700,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '我的答案',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: hasCorrectAnswer 
-                              ? Colors.green.shade700 
-                              : Colors.orange.shade700,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(999),
+                      onTap: () => _removeQuestion(qIndex),
+                      child: Container(
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
-                          color: hasCorrectAnswer 
-                              ? Colors.green.withValues(alpha: 0.15)
-                              : Colors.orange.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
+                          shape: BoxShape.circle,
+                          color: Y2K.danger.withValues(alpha: 0.18),
+                          border: Border.all(color: Y2K.ink, width: 1.5),
                         ),
-                        child: Text(
-                          _getCorrectAnswerText(question),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: hasCorrectAnswer 
-                                ? Colors.green.shade800 
-                                : Colors.orange.shade800,
-                          ),
-                        ),
+                        child: const Icon(Icons.close, size: 16, color: Y2K.ink),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '点击选项设置我的答案（用于性格对比分析）',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // 选项列表标题
-            Row(
-              children: [
-                const Text(
-                  '选项列表',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              const SizedBox(height: 14),
+              TextField(
+                controller: question.titleController,
+                decoration: const InputDecoration(
+                  labelText: '题目',
+                  hintText: '输入题目内容…',
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '(${question.options.length})',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // 选项（带标准答案选择功能）
-            ...question.options.asMap().entries.map(
-              (e) => _buildOptionRow(qIndex, e.key, e.value),
-            ),
-
-            // 添加选项按钮
-            TextButton.icon(
-              onPressed: () => _addOption(qIndex),
-              icon: const Icon(Icons.add_circle_outline, size: 18),
-              label: const Text('添加选项'),
-              style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
-            ),
-          ],
+                maxLines: 2,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 12),
+              _buildMultiToggle(question),
+              const SizedBox(height: 12),
+              _buildCorrectAnswerBanner(question, hasCorrectAnswer),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Text('OPTIONS', style: Y2K.mono.copyWith(fontSize: 10, color: Y2K.muted)),
+                  const SizedBox(width: 6),
+                  Text('· ${question.options.length}', style: Y2K.monoSm.copyWith(color: Y2K.muted)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...question.options.asMap().entries.map(
+                    (e) => _buildOptionRow(qIndex, e.key, e.value),
+                  ),
+              const SizedBox(height: 4),
+              Y2KButton(
+                label: '+ 添加选项',
+                kind: Y2KButtonKind.ghost,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                fontSize: 13,
+                onPressed: () => _addOption(qIndex),
+              ),
+            ],
+          ),
         ),
+        Positioned(
+          top: -12,
+          left: 16,
+          child: Y2KChip(
+            label: 'QUESTION ${(qIndex + 1).toString().padLeft(2, '0')}',
+            background: Y2K.blue,
+            foreground: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMultiToggle(_QuestionData question) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Y2K.chip,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Y2K.ink, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            question.isMultiChoice ? Icons.check_box_outlined : Icons.radio_button_checked,
+            size: 18,
+            color: Y2K.ink,
+          ),
+          const SizedBox(width: 8),
+          const Text('允许多选', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Y2K.ink)),
+          const Spacer(),
+          Switch(
+            value: question.isMultiChoice,
+            activeThumbColor: Y2K.pink,
+            activeTrackColor: Y2K.pink.withValues(alpha: 0.4),
+            onChanged: (value) {
+              setState(() {
+                question.isMultiChoice = value;
+                question.correctAnswer = value ? <int>{} : null;
+              });
+            },
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCorrectAnswerBanner(_QuestionData question, bool hasCorrectAnswer) {
+    final Color bg = hasCorrectAnswer ? Y2K.lime : Y2K.gold;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Y2K.ink, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.vpn_key_rounded, size: 16, color: Y2K.ink),
+              const SizedBox(width: 6),
+              const Text(
+                '我的答案',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Y2K.ink),
+              ),
+              const Spacer(),
+              Y2KTag(
+                label: _getCorrectAnswerText(question),
+                background: Y2K.ink,
+                foreground: Y2K.bg,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '点击下方选项字母来设置标准答案（用于匹配度计算）',
+            style: Y2K.monoSm.copyWith(color: Y2K.ink),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildOptionRow(int qIndex, int oIndex, _OptionData option) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final label = String.fromCharCode(65 + oIndex); // A, B, C...
+    final label = String.fromCharCode(65 + oIndex);
     final question = _questions[qIndex];
-    
-    // 检查是否为标准答案
+
     final isCorrectAnswer = !question.isMultiChoice
         ? question.correctAnswer == oIndex
         : (question.correctAnswer as Set<int>?)?.contains(oIndex) ?? false;
@@ -665,7 +630,6 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 选项标签 + 标准答案选择
           GestureDetector(
             onTap: () {
               if (!question.isMultiChoice) {
@@ -679,48 +643,40 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
               height: 32,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isCorrectAnswer 
-                    ? Colors.green 
-                    : colorScheme.primary.withValues(alpha: 0.12),
+                color: isCorrectAnswer ? Y2K.ink : Y2K.card,
                 shape: BoxShape.circle,
-                border: isCorrectAnswer
-                    ? Border.all(color: Colors.green.shade700, width: 2)
-                    : null,
+                border: Border.all(color: Y2K.ink, width: 1.5),
               ),
               child: isCorrectAnswer
-                  ? const Icon(Icons.check, color: Colors.white, size: 16)
+                  ? const Icon(Icons.check, color: Y2K.lime, size: 16)
                   : Text(
                       label,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w800,
                         fontSize: 13,
-                        color: colorScheme.primary,
+                        color: Y2K.ink,
                       ),
                     ),
             ),
           ),
-          const SizedBox(width: 8),
-
-          // 选项内容
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: option.contentController,
               decoration: InputDecoration(
                 hintText: '选项 $label 内容',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 isDense: true,
               ),
               textInputAction: TextInputAction.next,
             ),
           ),
-          const SizedBox(width: 8),
-
-          // 删除选项
+          const SizedBox(width: 6),
           IconButton(
             onPressed: () => _removeOption(qIndex, oIndex),
-            icon: const Icon(Icons.close, size: 18),
-            color: Colors.red.shade300,
+            icon: const Icon(Icons.close, size: 16),
+            color: Y2K.ink,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
