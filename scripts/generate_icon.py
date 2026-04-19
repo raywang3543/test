@@ -7,6 +7,9 @@ Run from the project root: python3 scripts/generate_icon.py
 
 import math
 from PIL import Image, ImageDraw
+import os, sys
+if not os.path.exists("pubspec.yaml"):
+    sys.exit("Error: run from the Flutter project root (pubspec.yaml not found here)")
 
 RENDER = 4096   # super-sample at 4x for crisp downscaled edges
 OUTPUT = 1024
@@ -116,30 +119,34 @@ def render_icon(cx_frac, cy_frac, heart_w_frac, offset_frac, size):
     return img
 
 
-# Full icon
-full_render = render_icon(
-    cx_frac=0.39, cy_frac=0.40,
-    heart_w_frac=0.55, offset_frac=0.215,
-    size=RENDER,
-)
-full_out = full_render.resize((OUTPUT, OUTPUT), Image.LANCZOS).convert("RGB")
-full_out.save("icon_source.png")
-print(f"✓ icon_source.png  ({OUTPUT}x{OUTPUT})")
+if __name__ == "__main__":
+    # Full icon
+    full_render = render_icon(
+        cx_frac=0.39, cy_frac=0.40,
+        heart_w_frac=0.55, offset_frac=0.215,
+        size=RENDER,
+    )
+    full_out = full_render.resize((OUTPUT, OUTPUT), Image.LANCZOS).convert("RGB")
+    full_out.save("icon_source.png")
+    print(f"✓ icon_source.png  ({OUTPUT}x{OUTPUT})")
 
+    # Adaptive icon foreground (transparent background, hearts in center 66% safe zone)
+    FG_RENDER = 4096
+    FG_OUTPUT = OUTPUT  # 1024
+    fg_scale = FG_RENDER / FG_OUTPUT
 
-# Adaptive icon foreground (transparent background, hearts in center 66% safe zone)
-FG_SIZE = OUTPUT
-fg_img = Image.new("RGBA", (FG_SIZE, FG_SIZE), (0, 0, 0, 0))
-draw_fg = ImageDraw.Draw(fg_img)
+    fg_img = Image.new("RGBA", (FG_RENDER, FG_RENDER), (0, 0, 0, 0))
+    draw_fg = ImageDraw.Draw(fg_img)
 
-heart_w_fg = int(0.45 * FG_SIZE)
-stroke_fg  = int(0.024 * FG_SIZE)
-off_fg     = int(0.14 * FG_SIZE)
-cx_fg      = int(0.42 * FG_SIZE)
-cy_fg      = int(0.43 * FG_SIZE)
+    heart_w_fg = int(0.45 * FG_RENDER)
+    stroke_fg  = int(0.024 * FG_RENDER)
+    off_fg     = int(0.14 * FG_RENDER)
+    cx_fg      = int(0.42 * FG_RENDER)
+    cy_fg      = int(0.43 * FG_RENDER)
 
-draw_heart(draw_fg, cx_fg + off_fg, cy_fg + off_fg, heart_w_fg, LIME[:3],  INK[:3], stroke_fg)
-draw_heart(draw_fg, cx_fg,          cy_fg,           heart_w_fg, CREAM[:3], INK[:3], stroke_fg)
+    draw_heart(draw_fg, cx_fg + off_fg, cy_fg + off_fg, heart_w_fg, LIME[:3],  INK[:3], stroke_fg)
+    draw_heart(draw_fg, cx_fg,          cy_fg,           heart_w_fg, CREAM[:3], INK[:3], stroke_fg)
 
-fg_img.save("icon_source_fg.png")
-print(f"✓ icon_source_fg.png ({FG_SIZE}x{FG_SIZE}, transparent bg)")
+    fg_out = fg_img.resize((FG_OUTPUT, FG_OUTPUT), Image.LANCZOS)
+    fg_out.save("icon_source_fg.png")
+    print(f"✓ icon_source_fg.png ({FG_OUTPUT}x{FG_OUTPUT}, transparent bg)")
