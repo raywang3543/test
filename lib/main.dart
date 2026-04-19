@@ -7,6 +7,8 @@ import 'pages/user_profile_page.dart';
 import 'services/server_config.dart';
 import 'services/survey_storage.dart';
 import 'services/user_storage.dart';
+import 'theme/y2k_theme.dart';
+import 'theme/y2k_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,15 +21,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '性格匹配测试',
+      title: 'Pulse',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF48FB1)),
-        useMaterial3: true,
-        cardTheme: const CardThemeData(
-          surfaceTintColor: Colors.transparent,
-        ),
-      ),
+      theme: Y2K.theme(),
       home: const HomePage(),
     );
   }
@@ -84,16 +80,15 @@ class _HomePageState extends State<HomePage> {
             children: [
               const Text(
                 '请输入局域网服务器地址（含端口号）',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(fontSize: 13, color: Y2K.muted),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
                 decoration: InputDecoration(
                   hintText: 'http://192.168.x.x:8000',
-                  border: const OutlineInputBorder(),
                   errorText: error,
-                  prefixIcon: const Icon(Icons.dns_outlined),
+                  prefixIcon: const Icon(Icons.dns_outlined, color: Y2K.ink),
                 ),
                 keyboardType: TextInputType.url,
                 autofocus: true,
@@ -103,13 +98,17 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           actions: [
             if (canDismiss)
-              TextButton(
+              Y2KButton(
+                label: '取消',
+                kind: Y2KButtonKind.ghost,
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('取消'),
               ),
-            FilledButton(
+            Y2KButton(
+              label: '确定',
+              kind: Y2KButtonKind.primary,
               onPressed: () async {
                 final url = controller.text.trim();
                 if (url.isEmpty) {
@@ -126,7 +125,6 @@ class _HomePageState extends State<HomePage> {
                   Navigator.pop(ctx);
                 }
               },
-              child: const Text('确定'),
             ),
           ],
         ),
@@ -154,15 +152,18 @@ class _HomePageState extends State<HomePage> {
       builder: (context) => AlertDialog(
         title: const Text('确认删除'),
         content: const Text('确定要删除您创建的测试题吗？此操作不可恢复。'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         actions: [
-          TextButton(
+          Y2KButton(
+            label: '取消',
+            kind: Y2KButtonKind.ghost,
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
           ),
-          FilledButton(
+          Y2KButton(
+            label: '删除',
+            kind: Y2KButtonKind.accent,
+            customBg: Y2K.danger,
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('删除'),
           ),
         ],
       ),
@@ -174,10 +175,7 @@ class _HomePageState extends State<HomePage> {
       await _checkUserSurvey();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('测试题已删除'),
-            behavior: SnackBarBehavior.floating,
-          ),
+          const SnackBar(content: Text('测试题已删除')),
         );
       }
     }
@@ -185,132 +183,192 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            centerTitle: true,
-            backgroundColor: colorScheme.primary,
-            leading: IconButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EventPage()),
+    return Y2KScaffold(
+      dots: true,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildTopBar(),
+              const SizedBox(height: 28),
+              _buildHero(),
+              const SizedBox(height: 20),
+              _buildStatBadge(),
+              const SizedBox(height: 20),
+              _FeatureCard(
+                index: '01',
+                title: '新建测试',
+                description: '创建性格匹配题目，设置选项与分数',
+                accent: Y2K.lime,
+                icon: Icons.edit_note_rounded,
+                onTap: _goToCreate,
               ),
-              icon: const Icon(Icons.event_note_outlined, color: Colors.white),
-              tooltip: '事件',
-            ),
-            actions: [
-              IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const UserListPage()),
+              const SizedBox(height: 12),
+              _FeatureCard(
+                index: '02',
+                title: '开始测试',
+                description: '选择测试题目，测试你们的匹配程度',
+                accent: Y2K.blue,
+                foreground: Colors.white,
+                icon: Icons.play_arrow_rounded,
+                onTap: _goToTestList,
+              ),
+              if (_hasOwnSurvey) ...[
+                const SizedBox(height: 12),
+                _FeatureCard(
+                  index: '03',
+                  title: '删除测试',
+                  description: '移除您创建的性格匹配题目',
+                  accent: Y2K.danger,
+                  foreground: Colors.white,
+                  icon: Icons.delete_outline_rounded,
+                  onTap: _deleteOwnSurvey,
                 ),
-                icon: const Icon(Icons.people_outline_rounded,
-                    color: Colors.white),
-                tooltip: '用户列表',
-              ),
-              IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const UserProfilePage()),
-                ),
-                icon: const Icon(Icons.person_outline_rounded,
-                    color: Colors.white),
-                tooltip: '个人信息',
-              ),
-              IconButton(
-                onPressed: () =>
-                    _showServerConfigDialog(canDismiss: true),
-                icon: const Icon(Icons.dns_outlined, color: Colors.white),
-                tooltip: '服务器设置',
+              ],
+              const SizedBox(height: 26),
+              const Y2KMarquee(
+                text: 'MATCH  ✦  CONNECT  ✦  DISCOVER  ✦  Y2K  ✦  2026',
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withValues(alpha: 0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.psychology_rounded,
-                          size: 72, color: Colors.white30),
-                      SizedBox(height: 10),
-                      Text(
-                        '性格匹配测试',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
           ),
-          SliverFillRemaining(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    '欢迎使用性格匹配测试',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Row(
+      children: [
+        const Y2KChip(label: 'v2.6 · BETA'),
+        const Spacer(),
+        _iconChip(Icons.event_note_outlined, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EventPage()),
+          );
+        }),
+        const SizedBox(width: 8),
+        _iconChip(Icons.people_outline_rounded, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UserListPage()),
+          );
+        }),
+        const SizedBox(width: 8),
+        _iconChip(Icons.person_outline_rounded, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UserProfilePage()),
+          );
+        }),
+        const SizedBox(width: 8),
+        _iconChip(Icons.dns_outlined, () => _showServerConfigDialog()),
+      ],
+    );
+  }
+
+  Widget _iconChip(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: Y2K.card,
+            shape: BoxShape.circle,
+            border: Border.all(color: Y2K.ink, width: 1.5),
+          ),
+          child: Icon(icon, size: 18, color: Y2K.ink),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHero() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '性格 · 匹配 · 测试',
+          style: Y2K.mono.copyWith(color: Y2K.muted),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          '你们是',
+          style: TextStyle(
+            fontSize: 56,
+            fontWeight: FontWeight.w700,
+            height: 0.95,
+            letterSpacing: -1.6,
+            color: Y2K.ink,
+          ),
+        ),
+        const Text(
+          '怎样的',
+          style: TextStyle(
+            fontSize: 56,
+            fontWeight: FontWeight.w700,
+            height: 0.95,
+            letterSpacing: -1.6,
+            color: Y2K.ink,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            const Y2KHighlight(text: '灵魂搭档？', fontSize: 52),
+          ],
+        ),
+        const SizedBox(height: 18),
+        const Text(
+          '出题 · 作答 · 解析匹配度，\n用直觉发现彼此。',
+          style: Y2K.bodyMuted,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatBadge() {
+    return Y2KCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Y2K.blue,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Y2K.ink, width: Y2K.borderWidth),
+            ),
+            alignment: Alignment.center,
+            child: const Sparkle(size: 22, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '已有很多人在用这里测彼此',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'TOP · 最近活跃 · 本地安全',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 10,
+                    color: Y2K.muted,
+                    letterSpacing: 1.2,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '创建测试题目，发现你们的性格契合度',
-                    style:
-                        TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
-                  _FeatureCard(
-                    icon: Icons.edit_note_rounded,
-                    color: Colors.pink.shade400,
-                    title: '新建测试',
-                    description: '创建性格匹配题目，设置选项与分数',
-                    onTap: _goToCreate,
-                  ),
-                  const SizedBox(height: 16),
-                  _FeatureCard(
-                    icon: Icons.play_circle_outline_rounded,
-                    color: Colors.pink.shade400,
-                    title: '开始测试',
-                    description: '选择性格测试题目，测试你们的匹配程度',
-                    onTap: _goToTestList,
-                  ),
-                  if (_hasOwnSurvey) ...[
-                    const SizedBox(height: 16),
-                    _FeatureCard(
-                      icon: Icons.delete_outline_rounded,
-                      color: Colors.red.shade400,
-                      title: '删除测试',
-                      description: '删除您创建的性格匹配题目',
-                      onTap: _deleteOwnSurvey,
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -320,73 +378,79 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _FeatureCard extends StatelessWidget {
-  final IconData icon;
-  final Color color;
+  final String index;
   final String title;
   final String description;
+  final Color accent;
+  final Color foreground;
+  final IconData icon;
   final VoidCallback? onTap;
 
   const _FeatureCard({
-    required this.icon,
-    required this.color,
+    required this.index,
     required this.title,
     required this.description,
+    required this.accent,
+    required this.icon,
     required this.onTap,
+    this.foreground = Y2K.ink,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Y2KCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: accent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Y2K.ink, width: Y2K.borderWidth),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: foreground, size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
+                    Text(
+                      index,
+                      style: Y2K.monoSm.copyWith(color: Y2K.pink, fontSize: 12),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Y2K.ink,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade500,
-                          height: 1.4),
                     ),
                   ],
                 ),
-              ),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: 16, color: Colors.grey.shade400),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: Y2K.ink2,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          const Icon(Icons.arrow_forward_rounded, size: 20, color: Y2K.ink),
+        ],
       ),
     );
   }
