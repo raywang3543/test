@@ -1,0 +1,10 @@
+{
+  "session_id": "ac50b32e-8f1f-4ab9-a50d-34e5ffcb07a2",
+  "prompt": "superpower会提交修改到git仓库么",
+  "git_status": [
+    "?? .claude/work-log/.state/session-ac50b32e-8f1f-4ab9-a50d-34e5ffcb07a2.json",
+    "?? work-log/raw-2026-04-20.md"
+  ],
+  "workspace_root": "/Users/ray/projects/test",
+  "updated_at": "2026-04-20T16:28:19.741699+08:00"
+}
