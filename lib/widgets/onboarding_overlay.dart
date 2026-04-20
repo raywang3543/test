@@ -86,10 +86,10 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.35),
+                  color: Colors.white.withValues(alpha: 0.35),
                   width: 1.5,
                 ),
               ),
@@ -145,7 +145,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
               border: Border.all(color: widget.accentColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: widget.accentColor.withOpacity(0.35),
+                  color: widget.accentColor.withValues(alpha: 0.35),
                   offset: const Offset(3, 3),
                   blurRadius: 0,
                 ),
@@ -227,7 +227,7 @@ class _SpotlightPainter extends CustomPainter {
     canvas.drawPath(
       cutoutPath,
       Paint()
-        ..color = accentColor.withOpacity(0.45)
+        ..color = accentColor.withValues(alpha: 0.45)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
