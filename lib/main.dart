@@ -41,6 +41,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool _hasOwnSurvey = false;
   String _serverUrl = '';
+  String _thinkMode = 'disabled';
   int _onboardingStep = 0; // 0 = hidden, 1-3 = active step
 
   final GlobalKey _createCardKey = GlobalKey();
@@ -59,7 +60,11 @@ class _HomePageState extends State<HomePage> {
       await ServerConfig.setBaseUrl(ServerConfig.defaultUrl);
       url = ServerConfig.defaultUrl;
     }
-    setState(() => _serverUrl = url!);
+    final thinkMode = await ServerConfig.getThinkMode();
+    setState(() {
+      _serverUrl = url!;
+      _thinkMode = thinkMode;
+    });
     await _checkUserSurvey();
     if (await OnboardingService.shouldShow()) {
       await OnboardingService.markDone();
@@ -78,22 +83,23 @@ class _HomePageState extends State<HomePage> {
   Future<void> _showServerConfigDialog({bool canDismiss = true}) async {
     final controller = TextEditingController(text: _serverUrl);
     String? error;
+    String tempThinkMode = _thinkMode;
 
     await showDialog(
       context: context,
       barrierDismissible: canDismiss,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('服务器地址'),
+          title: const Text('设置'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                '请输入局域网服务器地址（含端口号）',
+                '服务器地址',
                 style: TextStyle(fontSize: 13, color: Y2K.muted),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               TextField(
                 controller: controller,
                 decoration: InputDecoration(
@@ -105,6 +111,33 @@ class _HomePageState extends State<HomePage> {
                 autofocus: true,
                 onChanged: (_) {
                   if (error != null) setDialogState(() => error = null);
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'AI 模式',
+                style: TextStyle(fontSize: 13, color: Y2K.muted),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: tempThinkMode,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.psychology_outlined, color: Y2K.ink),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'disabled',
+                    child: Text('快速'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'enabled',
+                    child: Text('思考'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => tempThinkMode = value);
+                  }
                 },
               ),
             ],
@@ -131,8 +164,12 @@ class _HomePageState extends State<HomePage> {
                   return;
                 }
                 await ServerConfig.setBaseUrl(url);
+                await ServerConfig.setThinkMode(tempThinkMode);
                 if (ctx.mounted) {
-                  setState(() => _serverUrl = url);
+                  setState(() {
+                    _serverUrl = url;
+                    _thinkMode = tempThinkMode;
+                  });
                   Navigator.pop(ctx);
                 }
               },

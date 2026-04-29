@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/analysis_result_model.dart';
 import '../models/survey_model.dart';
+import 'server_config.dart';
 
 /// Kimi API 服务 - 用于性格分析
 /// API 文档: https://platform.moonshot.cn/docs/api/chat
@@ -9,7 +10,7 @@ class KimiService {
   // Kimi API 配置
   static const String _apiKey = 'sk-LatXCAEc7kwefpWTrOdM8IiYk0C97Axeykgcj4Rh0TQ5KeEN';
   static const String _baseUrl = 'https://api.moonshot.cn/v1';
-  static const String _model = 'moonshot-v1-8k';
+  static const String _model = 'kimi-k2.6';
 
   /// 自动生成性格匹配测试题，返回题目列表（含标准答案和分数）
   /// 每个 Map 包含：title, isMultiChoice, options, correctAnswer, score
@@ -48,6 +49,8 @@ $userHint
 ]
 ''';
 
+    final thinkMode = await ServerConfig.getThinkMode();
+
     final response = await http.post(
       Uri.parse('$_baseUrl/chat/completions'),
       headers: {
@@ -63,8 +66,7 @@ $userHint
           },
           {'role': 'user', 'content': prompt},
         ],
-        'temperature': 0.9,
-        'max_tokens': 2000,
+        'thinking': {'type': thinkMode},
       }),
     );
 
@@ -96,6 +98,8 @@ $userHint
       // 构建提示词
       final prompt = _buildAnalysisPrompt(survey, answers);
 
+      final thinkMode = await ServerConfig.getThinkMode();
+
       final response = await http.post(
         Uri.parse('$_baseUrl/chat/completions'),
         headers: {
@@ -116,8 +120,7 @@ $userHint
               'content': prompt,
             },
           ],
-          'temperature': 0.5,
-          'max_tokens': 4000,
+          'thinking': {'type': thinkMode},
         }),
       );
 

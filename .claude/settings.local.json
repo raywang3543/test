@@ -15,7 +15,8 @@
       "Bash(open *)",
       "Bash(git commit *)",
       "Bash(git *)",
-      "Bash(dart run *)"
+      "Bash(dart run *)",
+      "WebSearch"
     ]
   }
 }

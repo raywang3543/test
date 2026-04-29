@@ -1,0 +1,14 @@
+{
+  "session_id": "d3e7bb29-f526-4793-85ee-b09ea490afba",
+  "prompt": "本地缓存问题解决了，帮我恢复代码",
+  "git_status": [
+    " M .claude/settings.local.json",
+    " M lib/main.dart",
+    " M lib/services/kimi_service.dart",
+    " M lib/services/server_config.dart",
+    "?? .claude/work-log/.state/session-d3e7bb29-f526-4793-85ee-b09ea490afba.json",
+    "?? work-log/raw-2026-04-29.md"
+  ],
+  "workspace_root": "/Users/ray/projects/test",
+  "updated_at": "2026-04-29T12:06:39.351229+08:00"
+}
