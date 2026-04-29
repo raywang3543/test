@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/survey_model.dart';
-import '../services/kimi_service.dart';
+import '../services/deepseek_server.dart';
 import '../services/survey_storage.dart';
 import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
@@ -99,7 +99,7 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
   Future<void> _autoGenerate({String? userInput}) async {
     setState(() => _isGenerating = true);
     try {
-      final raw = await KimiService.generateSurveyQuestions(userInput: userInput);
+      final raw = await DeepseekServer.generateSurveyQuestions(userInput: userInput);
       for (final q in _questions) {
         q.dispose();
       }
