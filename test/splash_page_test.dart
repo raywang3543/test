@@ -3,19 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:test/pages/splash_page.dart';
 
 void main() {
-  testWidgets('SplashPage renders icon, title, and progress indicator', (WidgetTester tester) async {
+  testWidgets('SplashPage renders icon, title, and progress bar', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: SplashPage()),
     );
 
-    // Verify icon image is present
-    expect(find.byType(Image), findsOneWidget);
+    // 等待动画开始
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Verify icon is present (Icon widget with favorite_border)
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
 
     // Verify app title is present
     expect(find.text('Pulse'), findsOneWidget);
 
-    // Verify CircularProgressIndicator is present
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    // Verify subtitle is present
+    expect(find.text('性格 · 匹配 · 测试'), findsOneWidget);
   });
 
   testWidgets('SplashPage navigates to nextPage after timer completes', (WidgetTester tester) async {
