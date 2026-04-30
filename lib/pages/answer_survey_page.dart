@@ -3,6 +3,7 @@ import '../models/analysis_result_model.dart';
 import '../models/survey_model.dart';
 import '../services/deepseek_server.dart';
 import '../services/survey_result_storage.dart';
+import '../services/tts_service.dart';
 import '../theme/y2k_theme.dart';
 import '../theme/y2k_widgets.dart';
 
@@ -20,6 +21,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
   bool _submitted = false;
   bool _isAnalyzing = false;
   PersonalityAnalysisResult? _analysisResult;
+  final TtsService _ttsService = TtsService();
+  bool _isTtsPlaying = false;
+  bool _isTtsGenerating = false;
 
   @override
   void initState() {
@@ -27,6 +31,42 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
     _answers = widget.survey.questions.map<dynamic>((q) {
       return q.isMultiChoice ? <int>{} : null;
     }).toList();
+    _ttsService.initialize();
+    _ttsService.onStateChanged = () {
+      if (mounted) {
+        setState(() {
+          _isTtsPlaying = _ttsService.isPlaying;
+          _isTtsGenerating = _ttsService.isGenerating;
+        });
+      }
+    };
+  }
+
+  @override
+  void dispose() {
+    _ttsService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playTts(String text) async {
+    if (_ttsService.isPlaying) {
+      await _ttsService.stopAudio();
+      return;
+    }
+
+    if (_ttsService.hasAudio && _ttsService.status.contains('generated')) {
+      await _ttsService.playAudio();
+      return;
+    }
+
+    setState(() => _isTtsGenerating = true);
+    final success = await _ttsService.generateSpeech(text);
+    if (success && mounted) {
+      await _ttsService.playAudio();
+    }
+    if (mounted) {
+      setState(() => _isTtsGenerating = false);
+    }
   }
 
   int get _answeredCount {
@@ -338,6 +378,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                     title: '出题者性格分析',
                     accent: Y2K.blue,
                     content: result.creatorAnalysis,
+                    onPlayTts: () => _playTts(result.creatorAnalysis),
+                    isTtsPlaying: _isTtsPlaying,
+                    isTtsGenerating: _isTtsGenerating,
                   ),
                   const SizedBox(height: 14),
                   _buildAnalysisSection(
@@ -484,6 +527,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
     required Color accent,
     required String content,
     bool aiBadge = false,
+    VoidCallback? onPlayTts,
+    bool isTtsPlaying = false,
+    bool isTtsGenerating = false,
   }) {
     return Y2KCard(
       padding: const EdgeInsets.all(18),
@@ -522,6 +568,42 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                 ),
               ),
               if (aiBadge) const Y2KTag(label: '✦ AI', background: Y2K.blue, foreground: Colors.white),
+              if (onPlayTts != null) ...[
+                const SizedBox(width: 8),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: isTtsGenerating ? null : onPlayTts,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isTtsPlaying ? Y2K.pink.withValues(alpha: 0.12) : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isTtsPlaying ? Y2K.pink : Y2K.ink,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: isTtsGenerating
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Y2K.pink,
+                              ),
+                            )
+                          : Icon(
+                              isTtsPlaying ? Icons.stop_rounded : Icons.volume_up_rounded,
+                              size: 16,
+                              color: isTtsPlaying ? Y2K.pink : Y2K.ink,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 12),
