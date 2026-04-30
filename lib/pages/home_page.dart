@@ -4,7 +4,8 @@ import 'event_page.dart';
 import 'test_list_page.dart';
 import 'user_list_page.dart';
 import 'user_profile_page.dart';
-
+import '../services/survey_storage.dart';
+import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
 import '../theme/y2k_widgets.dart';
 
@@ -16,11 +17,27 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool _hasOwnSurvey = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserSurvey();
+  }
+
+  Future<void> _checkUserSurvey() async {
+    try {
+      final uid = await UserStorage.getOrCreateUid();
+      final hasSurvey = await SurveyStorage.hasSurvey(uid);
+      if (mounted) setState(() => _hasOwnSurvey = hasSurvey);
+    } catch (_) {}
+  }
+
   void _goToCreate() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const CreateSurveyPage()),
-    );
+    ).then((_) => _checkUserSurvey());
   }
 
   void _goToTestList() {
@@ -28,6 +45,41 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (_) => const TestListPage()),
     );
+  }
+
+  Future<void> _deleteOwnSurvey() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确定要删除您创建的测试题吗？此操作不可恢复。'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        actions: [
+          Y2KButton(
+            label: '取消',
+            kind: Y2KButtonKind.ghost,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          Y2KButton(
+            label: '删除',
+            kind: Y2KButtonKind.accent,
+            customBg: Y2K.danger,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final uid = await UserStorage.getOrCreateUid();
+      await SurveyStorage.deleteByUid(uid);
+      await _checkUserSurvey();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('测试题已删除')),
+        );
+      }
+    }
   }
 
   @override
@@ -64,7 +116,18 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.play_arrow_rounded,
                 onTap: _goToTestList,
               ),
-
+              if (_hasOwnSurvey) ...[
+                const SizedBox(height: 12),
+                _FeatureCard(
+                  index: '03',
+                  title: '删除测试',
+                  description: '移除您创建的性格匹配题目',
+                  accent: Y2K.danger,
+                  foreground: Colors.white,
+                  icon: Icons.delete_outline_rounded,
+                  onTap: _deleteOwnSurvey,
+                ),
+              ],
               const SizedBox(height: 26),
               const Y2KMarquee(
                 text: 'MATCH  ✦  CONNECT  ✦  DISCOVER  ✦  Y2K  ✦  2026',
@@ -101,7 +164,6 @@ class _HomePageState extends State<HomePage> {
             MaterialPageRoute(builder: (_) => const UserProfilePage()),
           );
         }),
-
       ],
     );
   }
