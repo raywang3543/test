@@ -3,8 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:test/main.dart';
 
 void main() {
-  testWidgets('HomePage renders without error', (tester) async {
+  testWidgets('App starts with SplashPage', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
-    expect(find.byType(MaterialApp), findsOneWidget);
+    
+    // Verify SplashPage is shown initially
+    expect(find.text('Pulse'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 }

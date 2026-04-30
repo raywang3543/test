@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/create_survey_page.dart';
+import 'pages/splash_page.dart';
 import 'pages/event_page.dart';
 import 'pages/test_list_page.dart';
 import 'pages/user_list_page.dart';
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
       title: 'Pulse',
       debugShowCheckedModeBanner: false,
       theme: Y2K.theme(),
-      home: const HomePage(),
+      home: const SplashPage(),
     );
   }
 }
