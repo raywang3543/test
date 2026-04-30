@@ -6,19 +6,6 @@ import 'home_page.dart';
 import '../theme/y2k_theme.dart';
 
 /// Y2K × Fluid 融合风格 Splash 页面
-/// 
-/// 配色：Y2K (米色背景 + 粉/绿/蓝强调色)
-/// 动画：Fluid (浮动流体渐变形状 + 毛玻璃效果)
-/// 结构：Storyboard 分镜式入场
-///
-/// 动画时间线：
-/// T+0ms     → 背景淡入，流体形状开始浮动
-/// T+300ms   → 毛玻璃图标弹性缩放入场
-/// T+700ms   → "Pulse" 标题上滑 + 淡入
-/// T+1100ms  → 副标题上滑 + 淡入
-/// T+1500ms  → 底部进度条展开
-/// T+3000ms  → 准备离场
-/// T+3600ms  → 淡出 → 导航到首页
 class SplashPage extends StatefulWidget {
   final Widget nextPage;
 
@@ -30,13 +17,9 @@ class SplashPage extends StatefulWidget {
 
 class _SplashPageState extends State<SplashPage>
     with TickerProviderStateMixin {
-  // 主动画控制器 (3.6s)
   late AnimationController _masterController;
-  
-  // 流体背景持续动画控制器 (无限循环)
   late AnimationController _fluidController;
 
-  // 分镜入场动画
   late Animation<double> _fadeIn;
   late Animation<double> _iconScale;
   late Animation<double> _iconRotate;
@@ -54,19 +37,17 @@ class _SplashPageState extends State<SplashPage>
   void initState() {
     super.initState();
 
-    // 流体背景持续浮动 (12秒一圈，无限循环)
     _fluidController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 12),
     )..repeat();
 
-    // 主分镜动画控制器
     _masterController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3600),
     );
 
-    // 1. 整体淡入 (0-500ms)
+    // 1. 整体淡入
     _fadeIn = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _masterController,
@@ -74,25 +55,23 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 2. 图标弹性缩放 + 旋转 (300-900ms)
-    _iconScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.15), weight: 55),
-      TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 45),
-    ]).animate(
+    // 2. 图标弹性缩放 + 旋转
+    // 注意：TweenSequence 要求 t 在 [0,1] 之间，不能使用 easeOutBack
+    _iconScale = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.08, 0.25, curve: Curves.easeOutBack),
+        curve: const Interval(0.08, 0.25, curve: Curves.easeOutCubic),
       ),
     );
 
     _iconRotate = Tween<double>(begin: -0.12, end: 0).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.08, 0.25, curve: Curves.easeOutBack),
+        curve: const Interval(0.08, 0.25, curve: Curves.easeOutCubic),
       ),
     );
 
-    // 3. 标题上滑 + 淡入 (700-1200ms)
+    // 3. 标题上滑 + 淡入
     _titleSlide = Tween<Offset>(
       begin: const Offset(0, 0.35),
       end: Offset.zero,
@@ -110,7 +89,7 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 4. 副标题上滑 + 淡入 (1100-1600ms)
+    // 4. 副标题上滑 + 淡入
     _subtitleSlide = Tween<Offset>(
       begin: const Offset(0, 0.25),
       end: Offset.zero,
@@ -128,7 +107,7 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 5. 进度条展开 (1500-2600ms)
+    // 5. 进度条展开
     _progressWidth = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _masterController,
@@ -143,7 +122,7 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 6. 整体淡出 (3000-3600ms)
+    // 6. 整体淡出
     _fadeOut = Tween<double>(begin: 1, end: 0).animate(
       CurvedAnimation(
         parent: _masterController,
@@ -153,7 +132,6 @@ class _SplashPageState extends State<SplashPage>
 
     _masterController.forward();
 
-    // 3.4s 后导航
     _navigateTimer = Timer(const Duration(milliseconds: 3400), () {
       if (mounted) {
         Navigator.pushReplacement(
@@ -183,112 +161,114 @@ class _SplashPageState extends State<SplashPage>
       backgroundColor: Y2K.bg,
       body: Stack(
         children: [
-          // ===== 流体背景层 =====
+          // 流体背景层
           _buildFluidBackground(),
-          
-          // ===== 内容层 =====
+          // 内容层
           _buildContent(),
         ],
       ),
     );
   }
 
-  /// 流体渐变背景
+  /// 使用 LayoutBuilder 安全获取尺寸，避免溢出
   Widget _buildFluidBackground() {
-    return AnimatedBuilder(
-      animation: _fluidController,
-      builder: (context, child) {
-        final t = _fluidController.value;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
         
-        return Stack(
-          children: [
-            // 基础背景
-            Container(color: Y2K.bg),
+        return AnimatedBuilder(
+          animation: _fluidController,
+          builder: (context, child) {
+            final t = _fluidController.value;
             
-            // Blob 1: 粉色 (右上)
-            _buildFluidBlob(
-              color: Y2K.pink.withValues(alpha: 0.18),
-              size: 320,
-              centerX: 0.75,
-              centerY: 0.15,
-              orbitRadius: 60,
-              phase: 0,
-              t: t,
-            ),
-            
-            // Blob 2: 酸橙绿 (左下)
-            _buildFluidBlob(
-              color: Y2K.lime.withValues(alpha: 0.15),
-              size: 280,
-              centerX: 0.20,
-              centerY: 0.70,
-              orbitRadius: 50,
-              phase: 2.1,
-              t: t,
-            ),
-            
-            // Blob 3: 蓝色 (右下)
-            _buildFluidBlob(
-              color: Y2K.blue.withValues(alpha: 0.12),
-              size: 250,
-              centerX: 0.80,
-              centerY: 0.80,
-              orbitRadius: 45,
-              phase: 4.2,
-              t: t,
-            ),
-            
-            // Blob 4: 金色 (左上，小)
-            _buildFluidBlob(
-              color: Y2K.gold.withValues(alpha: 0.10),
-              size: 180,
-              centerX: 0.15,
-              centerY: 0.25,
-              orbitRadius: 35,
-              phase: 1.5,
-              t: t,
-            ),
-            
-            // 微弱噪点纹理层 (可选，增加质感)
-            Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0.3, -0.3),
-                  radius: 1.2,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.3),
-                    Colors.transparent,
-                  ],
+            return Stack(
+              children: [
+                // 基础背景
+                Container(color: Y2K.bg),
+                
+                // Blob 1: 粉色 (右上)
+                _buildBlob(
+                  color: Y2K.pink.withValues(alpha: 0.15),
+                  size: 280,
+                  cx: w * 0.70,
+                  cy: h * 0.15,
+                  orbit: 40,
+                  phase: 0,
+                  t: t,
                 ),
-              ),
-            ),
-          ],
+                
+                // Blob 2: 酸橙绿 (左下)
+                _buildBlob(
+                  color: Y2K.lime.withValues(alpha: 0.12),
+                  size: 240,
+                  cx: w * 0.25,
+                  cy: h * 0.65,
+                  orbit: 35,
+                  phase: 2.1,
+                  t: t,
+                ),
+                
+                // Blob 3: 蓝色 (右下)
+                _buildBlob(
+                  color: Y2K.blue.withValues(alpha: 0.10),
+                  size: 220,
+                  cx: w * 0.75,
+                  cy: h * 0.75,
+                  orbit: 30,
+                  phase: 4.2,
+                  t: t,
+                ),
+                
+                // Blob 4: 金色 (左上)
+                _buildBlob(
+                  color: Y2K.gold.withValues(alpha: 0.08),
+                  size: 160,
+                  cx: w * 0.20,
+                  cy: h * 0.30,
+                  orbit: 25,
+                  phase: 1.5,
+                  t: t,
+                ),
+                
+                // 顶部高光
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0.3, -0.3),
+                      radius: 1.0,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.25),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  /// 单个流体 Blob
-  Widget _buildFluidBlob({
+  /// 单个流体 Blob — 使用 Transform.translate 替代 Positioned，避免溢出
+  Widget _buildBlob({
     required Color color,
     required double size,
-    required double centerX,
-    required double centerY,
-    required double orbitRadius,
+    required double cx,
+    required double cy,
+    required double orbit,
     required double phase,
     required double t,
   }) {
-    // 使用正弦波创建浮动轨迹
     final angle = t * 2 * pi + phase;
-    final offsetX = cos(angle) * orbitRadius;
-    final offsetY = sin(angle * 0.7) * orbitRadius * 0.6;
+    final dx = cos(angle) * orbit;
+    final dy = sin(angle * 0.7) * orbit * 0.6;
+    final breathe = 1.0 + sin(t * 2 * pi + phase) * 0.06;
     
-    // 呼吸缩放效果
-    final breathe = 1.0 + sin(t * 2 * pi + phase) * 0.08;
-    
-    return Positioned(
-      left: centerX * MediaQuery.of(context).size.width - size / 2 + offsetX,
-      top: centerY * MediaQuery.of(context).size.height - size / 2 + offsetY,
+    return Transform.translate(
+      offset: Offset(cx - size / 2 + dx, cy - size / 2 + dy),
       child: Transform.scale(
         scale: breathe,
         child: Container(
@@ -300,11 +280,11 @@ class _SplashPageState extends State<SplashPage>
               center: const Alignment(-0.2, -0.2),
               radius: 0.8,
               colors: [
-                color.withValues(alpha: color.a * 1.5),
                 color,
-                color.withValues(alpha: 0),
+                color.withValues(alpha: 0.5),
+                Colors.transparent,
               ],
-              stops: const [0.0, 0.4, 1.0],
+              stops: const [0.0, 0.5, 1.0],
             ),
           ),
         ),
@@ -312,7 +292,6 @@ class _SplashPageState extends State<SplashPage>
     );
   }
 
-  /// 主内容
   Widget _buildContent() {
     return AnimatedBuilder(
       animation: _masterController,
@@ -328,7 +307,7 @@ class _SplashPageState extends State<SplashPage>
           children: [
             const Spacer(flex: 3),
 
-            // ── 01 毛玻璃图标 ──────────────────────────────────
+            // 毛玻璃图标
             AnimatedBuilder(
               animation: _masterController,
               builder: (context, child) {
@@ -344,36 +323,36 @@ class _SplashPageState extends State<SplashPage>
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Colors.white.withValues(alpha: 0.80),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Y2K.ink.withValues(alpha: 0.1),
+                    color: Y2K.ink.withValues(alpha: 0.08),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Y2K.pink.withValues(alpha: 0.15),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
+                      color: Y2K.pink.withValues(alpha: 0.12),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
                     ),
                     BoxShadow(
-                      color: Y2K.lime.withValues(alpha: 0.1),
-                      blurRadius: 40,
-                      offset: const Offset(-10, -5),
+                      color: Y2K.lime.withValues(alpha: 0.08),
+                      blurRadius: 32,
+                      offset: const Offset(-8, -4),
                     ),
                   ],
                 ),
                 child: Icon(
                   Icons.favorite_border_rounded,
                   size: 36,
-                  color: Y2K.ink.withValues(alpha: 0.8),
+                  color: Y2K.ink.withValues(alpha: 0.75),
                 ),
               ),
             ),
 
             const SizedBox(height: 40),
 
-            // ── 02 主标题 Pulse ────────────────────────────────
+            // 标题
             AnimatedBuilder(
               animation: _masterController,
               builder: (context, child) {
@@ -395,9 +374,9 @@ class _SplashPageState extends State<SplashPage>
                   color: Y2K.ink,
                   shadows: [
                     Shadow(
-                      color: Y2K.pink.withValues(alpha: 0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
+                      color: Y2K.pink.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -406,7 +385,7 @@ class _SplashPageState extends State<SplashPage>
 
             const SizedBox(height: 14),
 
-            // ── 03 副标题 ──────────────────────────────────────
+            // 副标题胶囊
             AnimatedBuilder(
               animation: _masterController,
               builder: (context, child) {
@@ -421,10 +400,10 @@ class _SplashPageState extends State<SplashPage>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: Colors.white.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
-                    color: Y2K.ink.withValues(alpha: 0.08),
+                    color: Y2K.ink.withValues(alpha: 0.06),
                     width: 1,
                   ),
                 ),
@@ -435,7 +414,7 @@ class _SplashPageState extends State<SplashPage>
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 2.5,
-                    color: Y2K.ink.withValues(alpha: 0.45),
+                    color: Y2K.ink.withValues(alpha: 0.40),
                   ),
                 ),
               ),
@@ -443,7 +422,7 @@ class _SplashPageState extends State<SplashPage>
 
             const Spacer(flex: 2),
 
-            // ── 04 进度条 ──────────────────────────────────────
+            // 进度条
             AnimatedBuilder(
               animation: _masterController,
               builder: (context, child) {
@@ -453,7 +432,7 @@ class _SplashPageState extends State<SplashPage>
                     width: 120,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Y2K.ink.withValues(alpha: 0.06),
+                      color: Y2K.ink.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: Align(
@@ -466,17 +445,10 @@ class _SplashPageState extends State<SplashPage>
                             gradient: LinearGradient(
                               colors: [
                                 Y2K.pink,
-                                Y2K.pink.withValues(alpha: 0.6),
+                                Y2K.pink.withValues(alpha: 0.5),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Y2K.pink.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 0),
-                              ),
-                            ],
                           ),
                         ),
                       ),
