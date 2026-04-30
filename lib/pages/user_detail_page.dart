@@ -5,7 +5,7 @@ import '../models/user_model.dart';
 import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
 import '../theme/y2k_widgets.dart';
-import '../utils/uid_utils.dart';
+
 
 /// 用户详情页面 - 显示指定用户的个人信息（只读）
 class UserDetailPage extends StatefulWidget {
@@ -225,7 +225,7 @@ class _UserDetailPageState extends State<UserDetailPage> {
                 Text('UID', style: Y2K.monoSm.copyWith(color: Y2K.muted)),
                 const SizedBox(height: 2),
                 Text(
-                  truncateUid(_uid),
+                  _uid,
                   style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 13,
