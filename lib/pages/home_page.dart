@@ -157,7 +157,7 @@ class _HomePageState extends State<HomePage> {
       children: [
         const Y2KChip(label: 'v2.6 · BETA'),
         const Spacer(),
-        _buildThinkModeMenu(),
+        _buildThinkModeToggle(),
         const SizedBox(width: 8),
         _iconChip(Icons.event_note_outlined, () {
           Navigator.push(
@@ -183,80 +183,48 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildThinkModeMenu() {
+  Widget _buildThinkModeToggle() {
     final isEnabled = _thinkMode == 'enabled';
-    return PopupMenuButton<String>(
-      tooltip: '思考模式',
-      offset: const Offset(0, 40),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Y2K.ink, width: 1.5),
-      ),
-      color: Y2K.card,
-      onSelected: _setThinkMode,
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'disabled',
-          child: Row(
-            children: [
-              Icon(
-                Icons.bolt_outlined,
-                size: 18,
-                color: _thinkMode == 'disabled' ? Y2K.ink : Y2K.muted,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '快速回复',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: _thinkMode == 'disabled'
-                      ? FontWeight.w700
-                      : FontWeight.w400,
-                  color: _thinkMode == 'disabled' ? Y2K.ink : Y2K.muted,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: () async {
+          final newMode = isEnabled ? 'disabled' : 'enabled';
+          await _setThinkMode(newMode);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  newMode == 'enabled' ? '已切换至深度思考模式' : '已切换至快速回复模式',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                duration: const Duration(seconds: 1),
+                backgroundColor: Y2K.ink2,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
+            );
+          }
+        },
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: isEnabled ? Y2K.pink.withValues(alpha: 0.12) : Y2K.card,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isEnabled ? Y2K.pink : Y2K.ink,
+              width: 1.5,
+            ),
           ),
-        ),
-        PopupMenuItem(
-          value: 'enabled',
-          child: Row(
-            children: [
-              Icon(
-                Icons.psychology_outlined,
-                size: 18,
-                color: _thinkMode == 'enabled' ? Y2K.pink : Y2K.muted,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '深度思考',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: _thinkMode == 'enabled'
-                      ? FontWeight.w700
-                      : FontWeight.w400,
-                  color: _thinkMode == 'enabled' ? Y2K.pink : Y2K.muted,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: isEnabled ? Y2K.pink.withValues(alpha: 0.12) : Y2K.card,
-          shape: BoxShape.circle,
-          border: Border.all(
+          child: Icon(
+            isEnabled ? Icons.psychology_outlined : Icons.bolt_outlined,
+            size: 18,
             color: isEnabled ? Y2K.pink : Y2K.ink,
-            width: 1.5,
           ),
-        ),
-        child: Icon(
-          isEnabled ? Icons.psychology_outlined : Icons.bolt_outlined,
-          size: 18,
-          color: isEnabled ? Y2K.pink : Y2K.ink,
         ),
       ),
     );
