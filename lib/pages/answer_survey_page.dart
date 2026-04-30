@@ -22,8 +22,8 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
   bool _isAnalyzing = false;
   PersonalityAnalysisResult? _analysisResult;
   final TtsService _ttsService = TtsService();
-  bool _isTtsPlaying = false;
-  bool _isTtsGenerating = false;
+  String? _currentPlayingSection;
+  String? _currentGeneratingSection;
 
   @override
   void initState() {
@@ -35,8 +35,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
     _ttsService.onStateChanged = () {
       if (mounted) {
         setState(() {
-          _isTtsPlaying = _ttsService.isPlaying;
-          _isTtsGenerating = _ttsService.isGenerating;
+          if (!_ttsService.isPlaying) {
+            _currentPlayingSection = null;
+          }
         });
       }
     };
@@ -48,24 +49,31 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
     super.dispose();
   }
 
-  Future<void> _playTts(String text) async {
+  Future<void> _playTts(String section, String text) async {
+    // 如果当前正在播放这个 section，点击则停止
+    if (_currentPlayingSection == section && _ttsService.isPlaying) {
+      await _ttsService.stopAudio();
+      setState(() => _currentPlayingSection = null);
+      return;
+    }
+
+    // 如果正在播放其他 section，先停止
     if (_ttsService.isPlaying) {
       await _ttsService.stopAudio();
-      return;
     }
 
-    if (_ttsService.hasAudio && _ttsService.status.contains('generated')) {
-      await _ttsService.playAudio();
-      return;
-    }
+    setState(() {
+      _currentPlayingSection = null;
+      _currentGeneratingSection = section;
+    });
 
-    setState(() => _isTtsGenerating = true);
     final success = await _ttsService.generateSpeech(text);
     if (success && mounted) {
+      setState(() => _currentPlayingSection = section);
       await _ttsService.playAudio();
     }
     if (mounted) {
-      setState(() => _isTtsGenerating = false);
+      setState(() => _currentGeneratingSection = null);
     }
   }
 
@@ -378,9 +386,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                     title: '出题者性格分析',
                     accent: Y2K.blue,
                     content: result.creatorAnalysis,
-                    onPlayTts: () => _playTts(result.creatorAnalysis),
-                    isTtsPlaying: _isTtsPlaying,
-                    isTtsGenerating: _isTtsGenerating,
+                    onPlayTts: () => _playTts('01', result.creatorAnalysis),
+                    currentPlayingSection: _currentPlayingSection,
+                    currentGeneratingSection: _currentGeneratingSection,
                   ),
                   const SizedBox(height: 14),
                   _buildAnalysisSection(
@@ -388,6 +396,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                     title: '做题者性格分析',
                     accent: Y2K.lime,
                     content: result.playerAnalysis,
+                    onPlayTts: () => _playTts('02', result.playerAnalysis),
+                    currentPlayingSection: _currentPlayingSection,
+                    currentGeneratingSection: _currentGeneratingSection,
                   ),
                   const SizedBox(height: 14),
                   _buildAnalysisSection(
@@ -395,6 +406,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                     title: '朋友匹配度',
                     accent: Y2K.gold,
                     content: result.sameGenderCompatibility,
+                    onPlayTts: () => _playTts('03', result.sameGenderCompatibility),
+                    currentPlayingSection: _currentPlayingSection,
+                    currentGeneratingSection: _currentGeneratingSection,
                   ),
                   const SizedBox(height: 14),
                   _buildAnalysisSection(
@@ -403,6 +417,9 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
                     accent: Y2K.pink,
                     aiBadge: !result.creatorAnalysis.startsWith('⚠️'),
                     content: result.oppositeGenderCompatibility,
+                    onPlayTts: () => _playTts('04', result.oppositeGenderCompatibility),
+                    currentPlayingSection: _currentPlayingSection,
+                    currentGeneratingSection: _currentGeneratingSection,
                   ),
                   const SizedBox(height: 22),
                   Text('每题得分详情', style: Y2K.mono.copyWith(color: Y2K.muted)),
@@ -528,9 +545,11 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
     required String content,
     bool aiBadge = false,
     VoidCallback? onPlayTts,
-    bool isTtsPlaying = false,
-    bool isTtsGenerating = false,
+    String? currentPlayingSection,
+    String? currentGeneratingSection,
   }) {
+    final isTtsPlaying = currentPlayingSection == indexLabel;
+    final isTtsGenerating = currentGeneratingSection == indexLabel;
     return Y2KCard(
       padding: const EdgeInsets.all(18),
       child: Column(
