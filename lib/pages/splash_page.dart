@@ -335,7 +335,7 @@ class _SplashPageState extends State<SplashPage>
                   );
                 },
               child: Text(
-                'Pulse',
+                '灵犀',
                 style: TextStyle(
                   fontSize: 56,
                   fontWeight: FontWeight.w900,

@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Pulse',
+      title: '灵犀',
       debugShowCheckedModeBanner: false,
       theme: Y2K.theme(),
       home: const SplashPage(),

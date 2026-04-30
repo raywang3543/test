@@ -10,7 +10,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     
     // Verify SplashPage is shown initially
-    expect(find.text('Pulse'), findsOneWidget);
+    expect(find.text('灵犀'), findsOneWidget);
     expect(find.text('性格 · 匹配 · 测试'), findsOneWidget);
   });
 }

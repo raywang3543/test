@@ -15,7 +15,7 @@ void main() {
     expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
 
     // Verify app title is present
-    expect(find.text('Pulse'), findsOneWidget);
+    expect(find.text('灵犀'), findsOneWidget);
 
     // Verify subtitle is present
     expect(find.text('性格 · 匹配 · 测试'), findsOneWidget);
@@ -30,11 +30,11 @@ void main() {
       ),
     );
 
-    expect(find.text('Pulse'), findsOneWidget);
+    expect(find.text('灵犀'), findsOneWidget);
 
     await tester.pumpAndSettle(const Duration(milliseconds: 4000));
 
     expect(find.text('Next Page'), findsOneWidget);
-    expect(find.text('Pulse'), findsNothing);
+    expect(find.text('灵犀'), findsNothing);
   });
 }
