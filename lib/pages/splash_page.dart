@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../main.dart';
+import 'home_page.dart';
 import '../theme/y2k_theme.dart';
 
 class SplashPage extends StatefulWidget {
