@@ -47,7 +47,6 @@ class _SplashPageState extends State<SplashPage>
       duration: const Duration(milliseconds: 3600),
     );
 
-    // 1. 整体淡入
     _fadeIn = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _masterController,
@@ -55,8 +54,6 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 2. 图标弹性缩放 + 旋转
-    // 注意：TweenSequence 要求 t 在 [0,1] 之间，不能使用 easeOutBack
     _iconScale = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _masterController,
@@ -71,7 +68,6 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 3. 标题上滑 + 淡入
     _titleSlide = Tween<Offset>(
       begin: const Offset(0, 0.35),
       end: Offset.zero,
@@ -89,7 +85,6 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 4. 副标题上滑 + 淡入
     _subtitleSlide = Tween<Offset>(
       begin: const Offset(0, 0.25),
       end: Offset.zero,
@@ -107,7 +102,6 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 5. 进度条展开
     _progressWidth = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _masterController,
@@ -122,7 +116,6 @@ class _SplashPageState extends State<SplashPage>
       ),
     );
 
-    // 6. 整体淡出
     _fadeOut = Tween<double>(begin: 1, end: 0).animate(
       CurvedAnimation(
         parent: _masterController,
@@ -160,99 +153,83 @@ class _SplashPageState extends State<SplashPage>
     return Scaffold(
       backgroundColor: Y2K.bg,
       body: Stack(
+        alignment: Alignment.center,
         children: [
-          // 流体背景层
           _buildFluidBackground(),
-          // 内容层
           _buildContent(),
         ],
       ),
     );
   }
 
-  /// 使用 LayoutBuilder 安全获取尺寸，避免溢出
   Widget _buildFluidBackground() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth;
-        final h = constraints.maxHeight;
-        
-        return AnimatedBuilder(
-          animation: _fluidController,
-          builder: (context, child) {
-            final t = _fluidController.value;
-            
-            return Stack(
-              children: [
-                // 基础背景
-                Container(color: Y2K.bg),
-                
-                // Blob 1: 粉色 (右上)
-                _buildBlob(
-                  color: Y2K.pink.withValues(alpha: 0.15),
-                  size: 280,
-                  cx: w * 0.70,
-                  cy: h * 0.15,
-                  orbit: 40,
-                  phase: 0,
-                  t: t,
-                ),
-                
-                // Blob 2: 酸橙绿 (左下)
-                _buildBlob(
-                  color: Y2K.lime.withValues(alpha: 0.12),
-                  size: 240,
-                  cx: w * 0.25,
-                  cy: h * 0.65,
-                  orbit: 35,
-                  phase: 2.1,
-                  t: t,
-                ),
-                
-                // Blob 3: 蓝色 (右下)
-                _buildBlob(
-                  color: Y2K.blue.withValues(alpha: 0.10),
-                  size: 220,
-                  cx: w * 0.75,
-                  cy: h * 0.75,
-                  orbit: 30,
-                  phase: 4.2,
-                  t: t,
-                ),
-                
-                // Blob 4: 金色 (左上)
-                _buildBlob(
-                  color: Y2K.gold.withValues(alpha: 0.08),
-                  size: 160,
-                  cx: w * 0.20,
-                  cy: h * 0.30,
-                  orbit: 25,
-                  phase: 1.5,
-                  t: t,
-                ),
-                
-                // 顶部高光
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0.3, -0.3),
-                      radius: 1.0,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.25),
-                        Colors.transparent,
-                      ],
-                    ),
+    return SizedBox.expand(
+      child: AnimatedBuilder(
+        animation: _fluidController,
+        builder: (context, child) {
+          final t = _fluidController.value;
+          final size = MediaQuery.of(context).size;
+          final w = size.width;
+          final h = size.height;
+
+          return Stack(
+            children: [
+              Container(color: Y2K.bg),
+              _buildBlob(
+                color: Y2K.pink.withValues(alpha: 0.15),
+                size: 280,
+                cx: w * 0.70,
+                cy: h * 0.15,
+                orbit: 40,
+                phase: 0,
+                t: t,
+              ),
+              _buildBlob(
+                color: Y2K.lime.withValues(alpha: 0.12),
+                size: 240,
+                cx: w * 0.25,
+                cy: h * 0.65,
+                orbit: 35,
+                phase: 2.1,
+                t: t,
+              ),
+              _buildBlob(
+                color: Y2K.blue.withValues(alpha: 0.10),
+                size: 220,
+                cx: w * 0.75,
+                cy: h * 0.75,
+                orbit: 30,
+                phase: 4.2,
+                t: t,
+              ),
+              _buildBlob(
+                color: Y2K.gold.withValues(alpha: 0.08),
+                size: 160,
+                cx: w * 0.20,
+                cy: h * 0.30,
+                orbit: 25,
+                phase: 1.5,
+                t: t,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.3, -0.3),
+                    radius: 1.0,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.25),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
-              ],
-            );
-          },
-        );
-      },
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  /// 单个流体 Blob — 使用 Transform.translate 替代 Positioned，避免溢出
   Widget _buildBlob({
     required Color color,
     required double size,
@@ -266,9 +243,10 @@ class _SplashPageState extends State<SplashPage>
     final dx = cos(angle) * orbit;
     final dy = sin(angle * 0.7) * orbit * 0.6;
     final breathe = 1.0 + sin(t * 2 * pi + phase) * 0.06;
-    
-    return Transform.translate(
-      offset: Offset(cx - size / 2 + dx, cy - size / 2 + dy),
+
+    return Positioned(
+      left: cx - size / 2 + dx,
+      top: cy - size / 2 + dy,
       child: Transform.scale(
         scale: breathe,
         child: Container(
@@ -302,164 +280,168 @@ class _SplashPageState extends State<SplashPage>
         );
       },
       child: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(flex: 3),
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 使用 SizedBox 替代 Spacer，确保完美居中
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
 
-            // 毛玻璃图标
-            AnimatedBuilder(
-              animation: _masterController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _iconScale.value,
-                  child: Transform.rotate(
-                    angle: _iconRotate.value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.80),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Y2K.ink.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Y2K.pink.withValues(alpha: 0.12),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
+              // 毛玻璃图标
+              AnimatedBuilder(
+                animation: _masterController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _iconScale.value,
+                    child: Transform.rotate(
+                      angle: _iconRotate.value,
+                      child: child,
                     ),
-                    BoxShadow(
-                      color: Y2K.lime.withValues(alpha: 0.08),
-                      blurRadius: 32,
-                      offset: const Offset(-8, -4),
+                  );
+                },
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.80),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Y2K.ink.withValues(alpha: 0.08),
+                      width: 1,
                     ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.favorite_border_rounded,
-                  size: 36,
-                  color: Y2K.ink.withValues(alpha: 0.75),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Y2K.pink.withValues(alpha: 0.12),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: Y2K.lime.withValues(alpha: 0.08),
+                        blurRadius: 32,
+                        offset: const Offset(-8, -4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.favorite_border_rounded,
+                    size: 36,
+                    color: Y2K.ink.withValues(alpha: 0.75),
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 40),
+              const SizedBox(height: 40),
 
-            // 标题
-            AnimatedBuilder(
-              animation: _masterController,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _titleFade.value,
-                  child: FractionalTranslation(
-                    translation: _titleSlide.value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Text(
-                'Pulse',
-                style: TextStyle(
-                  fontSize: 56,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -2.5,
-                  height: 1.0,
-                  color: Y2K.ink,
-                  shadows: [
-                    Shadow(
-                      color: Y2K.pink.withValues(alpha: 0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 3),
+              // 标题
+              AnimatedBuilder(
+                animation: _masterController,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _titleFade.value,
+                    child: FractionalTranslation(
+                      translation: _titleSlide.value,
+                      child: child,
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // 副标题胶囊
-            AnimatedBuilder(
-              animation: _masterController,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _subtitleFade.value,
-                  child: FractionalTranslation(
-                    translation: _subtitleSlide.value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(
-                    color: Y2K.ink.withValues(alpha: 0.06),
-                    width: 1,
-                  ),
-                ),
+                  );
+                },
                 child: Text(
-                  '性格 · 匹配 · 测试',
+                  'Pulse',
                   style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2.5,
-                    color: Y2K.ink.withValues(alpha: 0.40),
+                    fontSize: 56,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -2.5,
+                    height: 1.0,
+                    color: Y2K.ink,
+                    shadows: [
+                      Shadow(
+                        color: Y2K.pink.withValues(alpha: 0.12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
 
-            const Spacer(flex: 2),
+              const SizedBox(height: 14),
 
-            // 进度条
-            AnimatedBuilder(
-              animation: _masterController,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _progressFade.value,
-                  child: Container(
-                    width: 120,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Y2K.ink.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(2),
+              // 副标题胶囊
+              AnimatedBuilder(
+                animation: _masterController,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _subtitleFade.value,
+                    child: FractionalTranslation(
+                      translation: _subtitleSlide.value,
+                      child: child,
                     ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: _progressWidth.value,
-                        child: Container(
-                          height: 4,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Y2K.pink,
-                                Y2K.pink.withValues(alpha: 0.5),
-                              ],
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: Y2K.ink.withValues(alpha: 0.06),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '性格 · 匹配 · 测试',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2.5,
+                      color: Y2K.ink.withValues(alpha: 0.40),
+                    ),
+                  ),
+                ),
+              ),
+
+              const Spacer(),
+
+              // 进度条
+              AnimatedBuilder(
+                animation: _masterController,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _progressFade.value,
+                    child: Container(
+                      width: 120,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Y2K.ink.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: _progressWidth.value,
+                          child: Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Y2K.pink,
+                                  Y2K.pink.withValues(alpha: 0.5),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
 
-            const SizedBox(height: 60),
-          ],
+              const SizedBox(height: 60),
+            ],
+          ),
         ),
       ),
     );
