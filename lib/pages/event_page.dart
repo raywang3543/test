@@ -78,58 +78,6 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
-  Future<void> _clearEvents({required bool isCreator}) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Y2K.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Y2K.ink, width: 2),
-        ),
-        title: const Text(
-          '确认清空',
-          style: TextStyle(
-              fontWeight: FontWeight.w800, color: Y2K.ink, fontSize: 18),
-        ),
-        content: Text(
-          isCreator ? '确定清空"完成我测试题的用户"的所有记录？' : '确定清空"我完成的测试题"的所有记录？',
-          style: const TextStyle(color: Y2K.ink2, fontSize: 14, height: 1.5),
-        ),
-        actions: [
-          Y2KButton(
-            label: '取消',
-            kind: Y2KButtonKind.ghost,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            fontSize: 13,
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          Y2KButton(
-            label: '清空',
-            icon: Icons.delete_outline_rounded,
-            kind: Y2KButtonKind.accent,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            fontSize: 13,
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    final currentUid = await UserStorage.getCurrentUid();
-    if (currentUid == null) return;
-    final db = DatabaseHelper();
-    if (isCreator) {
-      await db.deleteEventsByCreatorUid(currentUid);
-    } else {
-      await db.deleteEventsByAnswererUid(currentUid);
-    }
-    await _loadData();
-  }
-
   void _goToDetail(_EventItem item) {
     Navigator.push(
       context,
@@ -171,9 +119,6 @@ class _EventPageState extends State<EventPage> {
                             icon: Icons.people_alt_outlined,
                             items: _completedMine,
                             emptyText: '暂无用户完成你的测试题',
-                            onClear: _completedMine.isEmpty
-                                ? null
-                                : () => _clearEvents(isCreator: true),
                           ),
                           const SizedBox(height: 20),
                           _buildSection(
@@ -185,9 +130,6 @@ class _EventPageState extends State<EventPage> {
                             icon: Icons.assignment_turned_in_outlined,
                             items: _iCompleted,
                             emptyText: '你还没有完成任何测试题',
-                            onClear: _iCompleted.isEmpty
-                                ? null
-                                : () => _clearEvents(isCreator: false),
                           ),
                         ],
                       ),
@@ -250,7 +192,6 @@ class _EventPageState extends State<EventPage> {
     required IconData icon,
     required List<_EventItem> items,
     required String emptyText,
-    VoidCallback? onClear,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,16 +237,6 @@ class _EventPageState extends State<EventPage> {
               ),
             ),
             Y2KTag(label: '${items.length}', background: Y2K.card),
-            if (onClear != null) ...[
-              const SizedBox(width: 8),
-              Y2KChip(
-                label: '清空',
-                icon: Icons.delete_outline_rounded,
-                background: Y2K.pink,
-                foreground: Colors.white,
-                onTap: onClear,
-              ),
-            ],
           ],
         ),
         const SizedBox(height: 12),
