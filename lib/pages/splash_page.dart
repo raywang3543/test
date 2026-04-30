@@ -300,35 +300,24 @@ class _SplashPageState extends State<SplashPage>
                     ),
                   );
                 },
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.80),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Y2K.ink.withValues(alpha: 0.08),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Y2K.pink.withValues(alpha: 0.12),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                      BoxShadow(
-                        color: Y2K.lime.withValues(alpha: 0.08),
-                        blurRadius: 32,
-                        offset: const Offset(-8, -4),
-                      ),
-                    ],
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Y2K.pink,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Y2K.ink,
+                    width: Y2K.borderWidth,
                   ),
-                  child: Icon(
-                    Icons.favorite_border_rounded,
-                    size: 36,
-                    color: Y2K.ink.withValues(alpha: 0.75),
-                  ),
+                  boxShadow: Y2K.shadow(offset: 4),
                 ),
+                child: const Icon(
+                  Icons.favorite_border_rounded,
+                  size: 36,
+                  color: Colors.white,
+                ),
+              ),
               ),
 
               const SizedBox(height: 40),
@@ -345,23 +334,17 @@ class _SplashPageState extends State<SplashPage>
                     ),
                   );
                 },
-                child: Text(
-                  'Pulse',
-                  style: TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -2.5,
-                    height: 1.0,
-                    color: Y2K.ink,
-                    shadows: [
-                      Shadow(
-                        color: Y2K.pink.withValues(alpha: 0.12),
-                        blurRadius: 16,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
+              child: Text(
+                'Pulse',
+                style: TextStyle(
+                  fontSize: 56,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -2.5,
+                  height: 1.0,
+                  color: Y2K.pink,
+                  shadows: Y2K.shadow(offset: 3),
                 ),
+              ),
               ),
 
               const SizedBox(height: 14),
@@ -381,21 +364,22 @@ class _SplashPageState extends State<SplashPage>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: Y2K.lime,
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(
-                      color: Y2K.ink.withValues(alpha: 0.06),
-                      width: 1,
+                      color: Y2K.ink,
+                      width: Y2K.borderWidth,
                     ),
+                    boxShadow: Y2K.shadow(offset: 2),
                   ),
                   child: Text(
                     '性格 · 匹配 · 测试',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 2.5,
-                      color: Y2K.ink.withValues(alpha: 0.40),
+                      color: Y2K.ink,
                     ),
                   ),
                 ),
