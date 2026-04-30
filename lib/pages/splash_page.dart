@@ -31,7 +31,8 @@ class _SplashPageState extends State<SplashPage>
     );
     _controller.forward();
 
-    _timer = Timer(const Duration(milliseconds: 2500), () {
+    _timer = Timer(const Duration(milliseconds: 3100), () {
+      _controller.duration = const Duration(milliseconds: 500);
       _controller.reverse().then((_) {
         if (mounted) {
           Navigator.pushReplacement(

@@ -29,7 +29,7 @@ void main() {
 
     expect(find.text('Pulse'), findsOneWidget);
 
-    await tester.pumpAndSettle(const Duration(milliseconds: 3000));
+    await tester.pumpAndSettle(const Duration(milliseconds: 4000));
 
     expect(find.text('Next Page'), findsOneWidget);
     expect(find.text('Pulse'), findsNothing);
