@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../main.dart';
 import '../theme/y2k_theme.dart';
 
 class SplashPage extends StatefulWidget {
-  const SplashPage({super.key});
+  final Widget nextPage;
+
+  const SplashPage({super.key, this.nextPage = const HomePage()});
 
   @override
   State<SplashPage> createState() => _SplashPageState();
@@ -33,7 +36,7 @@ class _SplashPageState extends State<SplashPage>
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const Placeholder()),
+            MaterialPageRoute(builder: (_) => widget.nextPage),
           );
         }
       });

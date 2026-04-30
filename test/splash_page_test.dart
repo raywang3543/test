@@ -17,4 +17,21 @@ void main() {
     // Verify CircularProgressIndicator is present
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
+
+  testWidgets('SplashPage navigates to nextPage after timer completes', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const SplashPage(
+          nextPage: Scaffold(body: Text('Next Page')),
+        ),
+      ),
+    );
+
+    expect(find.text('Pulse'), findsOneWidget);
+
+    await tester.pumpAndSettle(const Duration(milliseconds: 3000));
+
+    expect(find.text('Next Page'), findsOneWidget);
+    expect(find.text('Pulse'), findsNothing);
+  });
 }
