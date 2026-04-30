@@ -5,7 +5,6 @@ import 'test_list_page.dart';
 import 'user_list_page.dart';
 import 'user_profile_page.dart';
 import '../services/onboarding_service.dart';
-import '../services/server_config.dart';
 import '../services/survey_storage.dart';
 import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
@@ -21,8 +20,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _hasOwnSurvey = false;
-  String _serverUrl = '';
-  String _thinkMode = 'disabled';
   int _onboardingStep = 0; // 0 = hidden, 1-3 = active step
 
   final GlobalKey _createCardKey = GlobalKey();
@@ -36,16 +33,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _initApp() async {
-    String? url = await ServerConfig.getBaseUrl();
-    if (url == null || url.isEmpty) {
-      await ServerConfig.setBaseUrl(ServerConfig.defaultUrl);
-      url = ServerConfig.defaultUrl;
-    }
-    final thinkMode = await ServerConfig.getThinkMode();
-    setState(() {
-      _serverUrl = url!;
-      _thinkMode = thinkMode;
-    });
     await _checkUserSurvey();
     if (await OnboardingService.shouldShow()) {
       await OnboardingService.markDone();
@@ -59,106 +46,6 @@ class _HomePageState extends State<HomePage> {
       final hasSurvey = await SurveyStorage.hasSurvey(uid);
       if (mounted) setState(() => _hasOwnSurvey = hasSurvey);
     } catch (_) {}
-  }
-
-  Future<void> _showServerConfigDialog({bool canDismiss = true}) async {
-    final controller = TextEditingController(text: _serverUrl);
-    String? error;
-    String tempThinkMode = _thinkMode;
-
-    await showDialog(
-      context: context,
-      barrierDismissible: canDismiss,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('设置'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '服务器地址',
-                style: TextStyle(fontSize: 13, color: Y2K.muted),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'http://192.168.x.x:8000',
-                  errorText: error,
-                  prefixIcon: const Icon(Icons.dns_outlined, color: Y2K.ink),
-                ),
-                keyboardType: TextInputType.url,
-                autofocus: true,
-                onChanged: (_) {
-                  if (error != null) setDialogState(() => error = null);
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'AI 模式',
-                style: TextStyle(fontSize: 13, color: Y2K.muted),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: tempThinkMode,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.psychology_outlined, color: Y2K.ink),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'disabled',
-                    child: Text('快速'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'enabled',
-                    child: Text('思考'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setDialogState(() => tempThinkMode = value);
-                  }
-                },
-              ),
-            ],
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          actions: [
-            if (canDismiss)
-              Y2KButton(
-                label: '取消',
-                kind: Y2KButtonKind.ghost,
-                onPressed: () => Navigator.pop(ctx),
-              ),
-            Y2KButton(
-              label: '确定',
-              kind: Y2KButtonKind.primary,
-              onPressed: () async {
-                final url = controller.text.trim();
-                if (url.isEmpty) {
-                  setDialogState(() => error = '请输入服务器地址');
-                  return;
-                }
-                if (!url.startsWith('http')) {
-                  setDialogState(() => error = '地址需以 http:// 或 https:// 开头');
-                  return;
-                }
-                await ServerConfig.setBaseUrl(url);
-                await ServerConfig.setThinkMode(tempThinkMode);
-                if (ctx.mounted) {
-                  setState(() {
-                    _serverUrl = url;
-                    _thinkMode = tempThinkMode;
-                  });
-                  Navigator.pop(ctx);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _advanceOnboarding(int fromStep) {
@@ -354,8 +241,6 @@ class _HomePageState extends State<HomePage> {
             MaterialPageRoute(builder: (_) => const UserProfilePage()),
           );
         }, key: _profileIconKey),
-        const SizedBox(width: 8),
-        _iconChip(Icons.dns_outlined, () => _showServerConfigDialog()),
       ],
     );
   }

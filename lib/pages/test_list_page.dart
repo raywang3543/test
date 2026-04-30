@@ -4,6 +4,7 @@ import '../services/survey_storage.dart';
 import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
 import '../theme/y2k_widgets.dart';
+import '../utils/uid_utils.dart';
 import 'answer_survey_page.dart';
 
 class TestListPage extends StatefulWidget {
@@ -236,7 +237,7 @@ class _TestListPageState extends State<TestListPage> {
   }
 
   Widget _buildUserCard(SurveyUserInfo userInfo) {
-    final displayUid = _highlightMatch(userInfo.uid, _searchQuery);
+    final displayUid = _highlightMatch(truncateUid(userInfo.uid), _searchQuery);
 
     return Y2KCard(
       onTap: () => _goToAnswerSurvey(userInfo.survey),

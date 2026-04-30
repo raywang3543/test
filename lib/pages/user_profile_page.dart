@@ -5,6 +5,7 @@ import '../services/survey_result_storage.dart';
 import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
 import '../theme/y2k_widgets.dart';
+import '../utils/uid_utils.dart';
 import 'edit_user_page.dart';
 
 class UserProfilePage extends StatefulWidget {
@@ -184,7 +185,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 Text('UID', style: Y2K.monoSm.copyWith(color: Y2K.muted)),
                 const SizedBox(height: 2),
                 Text(
-                  _uid.isEmpty ? '...' : _uid,
+                  _uid.isEmpty ? '...' : truncateUid(_uid),
                   style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 13,

@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
 import '../theme/y2k_widgets.dart';
+import '../utils/uid_utils.dart';
 import 'user_detail_page.dart';
 
 class EventPage extends StatefulWidget {
@@ -388,7 +389,7 @@ class _EventPageState extends State<EventPage> {
                         style: Y2K.monoSm.copyWith(color: Y2K.muted)),
                     const SizedBox(height: 2),
                     Text(
-                      item.uid,
+                      truncateUid(item.uid),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

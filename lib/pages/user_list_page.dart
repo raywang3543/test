@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../services/user_storage.dart';
 import '../theme/y2k_theme.dart';
 import '../theme/y2k_widgets.dart';
+import '../utils/uid_utils.dart';
 import 'user_detail_page.dart';
 
 /// 用户列表页面 - 显示所有答题用户列表
@@ -257,7 +258,7 @@ class _UserListPageState extends State<UserListPage> {
   }
 
   Widget _buildUserCard(UserListItem userInfo) {
-    final displayUid = _highlightMatch(userInfo.uid, _searchQuery);
+    final displayUid = _highlightMatch(truncateUid(userInfo.uid), _searchQuery);
     final basicInfo = userInfo.profile.basicInfo;
     final isPassed = userInfo.lastScore != null &&
         userInfo.profile.passingScore != null &&
