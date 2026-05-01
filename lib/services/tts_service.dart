@@ -9,6 +9,8 @@ import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'ai_config_service.dart';
+
 /// TTS 状态回调函数类型
 typedef TtsStatusCallback = void Function(String status);
 typedef TtsStateCallback = void Function();
@@ -22,9 +24,7 @@ class TtsService {
   TtsService._internal();
 
   // ==================== 讯飞TTS配置 ====================
-  static const String _xfyunAppId = 'b9097fb2';
-  static const String _xfyunApiKey = 'bf7d7a7c7a2fad76d27d052bd243d738';
-  static const String _xfyunApiSecret = 'M2U0ZjFlNjYxMWFlYWFlMDViMmE0MGVj';
+  // 配置从服务器获取，不再硬编码
 
   // ==================== 状态属性 ====================
   bool get isGenerating => _isGenerating;
@@ -69,19 +69,24 @@ class TtsService {
   }
 
   /// 构建讯飞TTS鉴权URL（HMAC-SHA256）
-  String _buildXfyunAuthUrl() {
+  Future<String> _buildXfyunAuthUrl() async {
+    final config = await AiConfigService.getXfyunConfig();
+    if (config.apiKey.isEmpty || config.apiSecret.isEmpty) {
+      throw Exception('讯飞 TTS 配置未设置');
+    }
+
     const String host = 'tts-api.xfyun.cn';
     final String date = HttpDate.format(DateTime.now().toUtc());
     const String requestLine = 'GET /v2/tts HTTP/1.1';
     final String signatureOrigin = 'host: $host\ndate: $date\n$requestLine';
 
-    final List<int> signatureBytes = Hmac(sha256, utf8.encode(_xfyunApiSecret))
+    final List<int> signatureBytes = Hmac(sha256, utf8.encode(config.apiSecret))
         .convert(utf8.encode(signatureOrigin))
         .bytes;
     final String signature = base64.encode(signatureBytes);
 
     final String authorizationOrigin =
-        'api_key="$_xfyunApiKey", algorithm="hmac-sha256", '
+        'api_key="${config.apiKey}", algorithm="hmac-sha256", '
         'headers="host date request-line", signature="$signature"';
     final String authorization = base64.encode(utf8.encode(authorizationOrigin));
 
@@ -108,14 +113,15 @@ class TtsService {
       _updateStatus('Generating speech via Xfyun...');
       _notifyStateChanged();
 
-      final String authUrl = _buildXfyunAuthUrl();
+      final String authUrl = await _buildXfyunAuthUrl();
+      final config = await AiConfigService.getXfyunConfig();
       log('[XfyunTTS] Connecting to WebSocket...', name: 'XfyunTTS');
       
       final channel = WebSocketChannel.connect(Uri.parse(authUrl));
 
       final String encodedText = base64.encode(utf8.encode(text));
       final Map<String, dynamic> request = {
-        'common': {'app_id': _xfyunAppId},
+        'common': {'app_id': config.appId},
         'business': {
           'aue': 'lame',
           'sfl': 1,

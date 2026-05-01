@@ -61,14 +61,14 @@ class _UserDetailPageState extends State<UserDetailPage> {
     }
   }
 
-  Future<void> _copyUid(String uid) async {
-    await Clipboard.setData(ClipboardData(text: uid));
+  Future<void> _copyText(String text, {String label = '内容'}) async {
+    await Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('UID 已复制到剪贴板'),
+        SnackBar(
+          content: Text('$label 已复制到剪贴板'),
           behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -245,7 +245,7 @@ class _UserDetailPageState extends State<UserDetailPage> {
             kind: Y2KButtonKind.dark,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             fontSize: 12,
-            onPressed: () => _copyUid(_uid),
+            onPressed: () => _copyText(_uid, label: 'UID'),
           ),
         ],
       ),
@@ -296,6 +296,16 @@ class _UserDetailPageState extends State<UserDetailPage> {
                     fontWeight: FontWeight.w800,
                     color: Y2K.ink),
               ),
+              const Spacer(),
+              if (!isEmpty)
+                Y2KButton(
+                  label: '复制',
+                  icon: Icons.copy_rounded,
+                  kind: Y2KButtonKind.dark,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  fontSize: 12,
+                  onPressed: () => _copyText(content, label: title),
+                ),
             ],
           ),
           const SizedBox(height: 12),

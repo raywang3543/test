@@ -2,16 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/analysis_result_model.dart';
 import '../models/survey_model.dart';
+import 'ai_config_service.dart';
 import 'server_config.dart';
 
 /// Kimi API 服务 - 用于性格分析
 /// API 文档: https://platform.moonshot.cn/docs/api/chat
 class KimiService {
-  // Kimi API 配置
-  static const String _apiKey = 'sk-LatXCAEc7kwefpWTrOdM8IiYk0C97Axeykgcj4Rh0TQ5KeEN';
-  static const String _baseUrl = 'https://api.moonshot.cn/v1';
-  static const String _model = 'kimi-k2.6';
-
   /// 自动生成性格匹配测试题，返回题目列表（含标准答案和分数）
   /// 每个 Map 包含：title, isMultiChoice, options, correctAnswer, score
   static Future<List<Map<String, dynamic>>> generateSurveyQuestions({String? userInput}) async {
@@ -49,16 +45,21 @@ $userHint
 ]
 ''';
 
+    final config = await AiConfigService.getKimiConfig();
+    if (config.apiKey.isEmpty) {
+      throw Exception('Kimi API Key 未配置');
+    }
+
     final thinkMode = await ServerConfig.getThinkMode();
 
     final response = await http.post(
-      Uri.parse('$_baseUrl/chat/completions'),
+      Uri.parse('${config.baseUrl}/chat/completions'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $_apiKey',
+        'Authorization': 'Bearer ${config.apiKey}',
       },
       body: jsonEncode({
-        'model': _model,
+        'model': config.model,
         'messages': [
           {
             'role': 'system',
@@ -89,8 +90,9 @@ $userHint
     required Survey survey,
     required List<dynamic> answers,
   }) async {
+    final config = await AiConfigService.getKimiConfig();
     // 如果没有配置 API Key，返回模拟数据
-    if (_apiKey.isEmpty) {
+    if (config.apiKey.isEmpty) {
       return _generateMockResult(survey, answers);
     }
 
@@ -101,13 +103,13 @@ $userHint
       final thinkMode = await ServerConfig.getThinkMode();
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/chat/completions'),
+        Uri.parse('${config.baseUrl}/chat/completions'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_apiKey',
+          'Authorization': 'Bearer ${config.apiKey}',
         },
         body: jsonEncode({
-          'model': _model,
+          'model': config.model,
           'messages': [
             {
               'role': 'system',

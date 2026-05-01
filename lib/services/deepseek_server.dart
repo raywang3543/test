@@ -2,15 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/analysis_result_model.dart';
 import '../models/survey_model.dart';
+import 'ai_config_service.dart';
 import 'server_config.dart';
 
 /// DeepSeek API 服务 - 用于性格分析
 /// API 文档: https://api-docs.deepseek.com/
 class DeepseekServer {
-  static const String _apiKey = 'sk-799834d2511e4123b47c1a018f220474';
-  static const String _baseUrl = 'https://api.deepseek.com';
-  static const String _model = 'deepseek-v4-flash';
-
   /// 自动生成性格匹配测试题，返回题目列表（含标准答案和分数）
   /// 每个 Map 包含：title, isMultiChoice, options, correctAnswer, score
   static Future<List<Map<String, dynamic>>> generateSurveyQuestions({String? userInput}) async {
@@ -48,16 +45,21 @@ $userHint
 ]
 ''';
 
+    final config = await AiConfigService.getDeepSeekConfig();
+    if (config.apiKey.isEmpty) {
+      throw Exception('DeepSeek API Key 未配置');
+    }
+
     final thinkMode = await ServerConfig.getThinkMode();
 
     final response = await http.post(
-      Uri.parse('$_baseUrl/chat/completions'),
+      Uri.parse('${config.baseUrl}/chat/completions'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $_apiKey',
+        'Authorization': 'Bearer ${config.apiKey}',
       },
       body: jsonEncode({
-        'model': _model,
+        'model': config.model,
         'messages': [
           {
             'role': 'system',
@@ -87,7 +89,8 @@ $userHint
     required Survey survey,
     required List<dynamic> answers,
   }) async {
-    if (_apiKey.isEmpty) {
+    final config = await AiConfigService.getDeepSeekConfig();
+    if (config.apiKey.isEmpty) {
       return _generateMockResult(survey, answers);
     }
 
@@ -97,13 +100,13 @@ $userHint
       final thinkMode = await ServerConfig.getThinkMode();
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/chat/completions'),
+        Uri.parse('${config.baseUrl}/chat/completions'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_apiKey',
+          'Authorization': 'Bearer ${config.apiKey}',
         },
         body: jsonEncode({
-          'model': _model,
+          'model': config.model,
           'messages': [
             {
               'role': 'system',

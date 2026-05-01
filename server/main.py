@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -7,6 +8,26 @@ from pydantic import BaseModel
 import database as db
 
 app = FastAPI(title="Emotion Test API")
+
+# ==================== AI Service Config ====================
+# 从环境变量读取 AI 服务配置，未设置时使用默认值
+AI_CONFIG = {
+    "deepseek": {
+        "apiKey": os.getenv("DEEPSEEK_API_KEY", "sk-799834d2511e4123b47c1a018f220474"),
+        "baseUrl": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+        "model": os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash"),
+    },
+    "kimi": {
+        "apiKey": os.getenv("KIMI_API_KEY", "sk-LatXCAEc7kwefpWTrOdM8IiYk0C97Axeykgcj4Rh0TQ5KeEN"),
+        "baseUrl": os.getenv("KIMI_BASE_URL", "https://api.moonshot.cn/v1"),
+        "model": os.getenv("KIMI_MODEL", "kimi-k2.6"),
+    },
+    "xfyun": {
+        "appId": os.getenv("XFYUN_APP_ID", "b9097fb2"),
+        "apiKey": os.getenv("XFYUN_API_KEY", "bf7d7a7c7a2fad76d27d052bd243d738"),
+        "apiSecret": os.getenv("XFYUN_API_SECRET", "M2U0ZjFlNjYxMWFlYWFlMDViMmE0MGVj"),
+    },
+}
 
 
 @app.on_event("startup")
@@ -149,3 +170,11 @@ def delete_events_by_answerer(answerer_uid: str):
 def delete_events_by_creator(creator_uid: str):
     db.delete_events_by_creator(creator_uid)
     return {"deleted": creator_uid}
+
+
+# ==================== Config endpoint ====================
+
+@app.get("/config")
+def get_config():
+    """返回 AI 服务配置（供客户端使用）"""
+    return AI_CONFIG

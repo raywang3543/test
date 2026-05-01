@@ -62,15 +62,15 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
   }
 
   Future<void> _showGenerateDialog() async {
-    final controller = TextEditingController();
+    String userInput = '';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('AI 生成题目'),
         content: TextField(
-          controller: controller,
           autofocus: true,
           maxLines: 3,
+          onChanged: (value) => userInput = value,
           decoration: const InputDecoration(
             hintText: '可输入主题或要求，例如：围绕旅行偏好出题（可留空）',
           ),
@@ -91,9 +91,8 @@ class _CreateSurveyPageState extends State<CreateSurveyPage> {
       ),
     );
     if (confirmed == true) {
-      _autoGenerate(userInput: controller.text);
+      _autoGenerate(userInput: userInput);
     }
-    controller.dispose();
   }
 
   Future<void> _autoGenerate({String? userInput}) async {

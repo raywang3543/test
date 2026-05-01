@@ -14,14 +14,10 @@ class ApiClient {
   factory ApiClient() => _instance;
   ApiClient._internal();
 
-  Future<String> _base() async {
-    final url = await ServerConfig.getBaseUrl();
-    if (url == null || url.isEmpty) throw ApiException('服务器地址未配置');
-    return url;
-  }
+  String get _base => ServerConfig.baseUrl;
 
   Future<dynamic> _get(String path) async {
-    final res = await http.get(Uri.parse('${await _base()}$path'));
+    final res = await http.get(Uri.parse('$_base$path'));
     if (res.statusCode == 404) return null;
     _assertOk(res);
     return jsonDecode(res.body);
@@ -29,7 +25,7 @@ class ApiClient {
 
   Future<dynamic> _post(String path, [Map<String, dynamic>? body]) async {
     final res = await http.post(
-      Uri.parse('${await _base()}$path'),
+      Uri.parse('$_base$path'),
       headers: {'Content-Type': 'application/json'},
       body: body != null ? jsonEncode(body) : null,
     );
@@ -39,7 +35,7 @@ class ApiClient {
 
   Future<dynamic> _put(String path, Map<String, dynamic> body) async {
     final res = await http.put(
-      Uri.parse('${await _base()}$path'),
+      Uri.parse('$_base$path'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
@@ -48,7 +44,7 @@ class ApiClient {
   }
 
   Future<void> _delete(String path) async {
-    final res = await http.delete(Uri.parse('${await _base()}$path'));
+    final res = await http.delete(Uri.parse('$_base$path'));
     _assertOk(res);
   }
 

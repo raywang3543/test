@@ -40,6 +40,17 @@ Page → DatabaseHelper (thin facade) → ApiClient (HTTP) → FastAPI → SQLit
 
 `userInfo` (uid PK), `survey` (uid PK), `event` (answererUid + creatorUid).
 
+### AI Service Config
+
+All AI service configs (DeepSeek, Kimi, Xfyun TTS) are now stored **server-side** in `main.py` and fetched by the client via `GET /config`.
+
+Client: `AiConfigService` (`lib/services/ai_config_service.dart`) fetches and caches config from the server. Used by `DeepseekServer`, `KimiService`, and `TtsService`.
+
+Server: Configs are defined in `AI_CONFIG` dict at the top of `main.py` and can be overridden via environment variables:
+- `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL`
+- `KIMI_API_KEY`, `KIMI_BASE_URL`, `KIMI_MODEL`
+- `XFYUN_APP_ID`, `XFYUN_API_KEY`, `XFYUN_API_SECRET`
+
 ### DeepSeek API
 
 `DeepseekServer` calls `https://api.deepseek.com/v1/chat/completions` (OpenAI-compatible) for two purposes:
