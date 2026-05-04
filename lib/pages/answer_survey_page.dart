@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/analysis_result_model.dart';
 import '../models/survey_model.dart';
-import '../services/deepseek_server.dart';
+import '../services/kimi_service.dart';
 import '../services/survey_result_storage.dart';
 import '../services/tts_service.dart';
 import '../theme/y2k_theme.dart';
@@ -92,7 +92,7 @@ class _AnswerSurveyPageState extends State<AnswerSurveyPage> {
       _submitted = true;
     });
 
-    final result = await DeepseekServer.analyzePersonalityDetailed(
+    final result = await KimiService.analyzePersonalityDetailed(
       survey: widget.survey,
       answers: _answers,
     );
