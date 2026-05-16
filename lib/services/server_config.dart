@@ -2,8 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ServerConfig {
   static const _thinkKey = 'think_mode';
-  static const baseUrl = 'http://182.92.61.108';
-  //static const baseUrl = 'http://127.0.0.1:8000';
+  static const baseUrl = 'http://127.0.0.1:8000';
 
   static Future<String> getThinkMode() async {
     final prefs = await SharedPreferences.getInstance();
